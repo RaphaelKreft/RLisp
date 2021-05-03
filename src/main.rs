@@ -2,11 +2,16 @@
 main.rs: The main file of the RLisp Interpreter.
 */
 
+mod printer;
 mod reader;
-mod utils;
+pub mod utils;
+pub mod types;
+//mod env;
+//mod eval;
 
 use std::fs::File;
 use std::io::{self, BufRead};
+use types::{Sexpression, Atom};
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
@@ -35,19 +40,20 @@ fn main() {
     }
 }
 
-fn READ(plain_input: &String) -> &String {
-    return plain_input;
+// Wrapper of REPL: calls reader to convert a string to an AST the Evaluator can work with
+fn READ(plain_input: &String) -> &Sexpression {
+    return reader::read_str(plain_input);
 }
 
-fn EVAL(expression: &String) -> &String {
+fn EVAL(expression: &Sexpression) -> &Sexpression {
     return expression;
 }
 
-fn PRINT(text: &String) -> &String {
-    return text;
+fn PRINT(text: &Sexpression) -> String {
+    return printer::print_str(text);
 }
 
-fn rep(toprocess: &String) -> &String{
+fn rep(toprocess: &String) -> String{
     return PRINT(EVAL(READ(toprocess))); 
 }
 

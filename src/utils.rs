@@ -11,12 +11,12 @@ pub fn input(text: &str) -> String {
     return input;
 }
 
-pub fn sting_holds_integer(string: String) -> bool {
-    let re = Regex::new(r"[+-]?\b[0-9]+\b");
-    return re.is_match(string);
+pub fn string_holds_integer(string: String) -> bool {
+    let re = Regex::new(r"[+-]?\b[0-9]+\b").unwrap();
+    return re.is_match(&string);
 }
 
 pub fn string_holds_float(string: String) -> bool {
-    let re = Regex::new(r"^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$");
-    return re.is_match(string);
+    let re = Regex::new(r"^[+-]?([0-9]+([.][0-9]*)?|[.][0-9]+)$").unwrap();
+    return re.is_match(&string);
 }

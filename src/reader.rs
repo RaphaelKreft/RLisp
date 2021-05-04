@@ -4,38 +4,44 @@ reader.rs:  Holds the parser for S-Expressions, that is used to build up the syt
 */
 
 use regex::Regex;
-use super::types::{Atom, Sexpression};
+use super::types::{Atom, Sexpression, get_value_list};
 
 
 // This is the only function visible and the Interface of the whole
 // reader functionality
 pub fn read_str(line: &String) -> Sexpression {
-    let tmpRead: Reader = Reader::new(tokenize(line));
-    return read_form(tmpRead);
+    let mut tmpRead: Reader = Reader::new(tokenize(line));
+    let plist = Sexpression::List(Vec::new());
+    return read_from_tokens(&mut tmpRead, &mut plist);
 }
 
 // Takes a Reader and creates an Sexpression with the help of it
-fn read_form(reader: &Reader) -> Sexpression {
-    if reader.peek() == "("{
-        return read_list(reader);
+fn read_from_tokens(reader: &mut Reader, plist: &mut Sexpression) -> Sexpression {
+    if reader.peek() == "(" {
+        return read_list(reader, plist);
     } else {
         return read_atom(reader);
     }
 }
 
-fn read_list(reader: &Reader) -> Sexpression{
-    let mylist: Sexpression::List;
+fn read_list(reader: &mut Reader, plist: &mut Sexpression) {
+    let mylist = Sexpression::List(Vec::new());
     loop {
-        if reader.peek() == ")" {
-            return mylist;
+        if reader.next() == ")" {
+            get_value_list(plist).push(mylist);
+            break;
         }
-        mylist.push(read_form(reader));
+        get_value_list(mylist).push(read_from_tokens(reader, plist));
     }
 }
 
-fn read_atom(reader: &Reader) -> Sexpression{
+fn read_atom(reader: &mut Reader, plist: &mut Sexpression) {
     let atom = reader.next();
-    return Atom(atom); 
+    if get_value_list(plist).is_empty() {
+        *plist = Sexpression::Atom(Atom::new(&atom.to_string()));
+    } else {
+        get_value_list(plist).push(Sexpression::Atom(Atom::new(&atom.to_string())));
+    }
 }
 
 
@@ -43,7 +49,7 @@ fn read_atom(reader: &Reader) -> Sexpression{
 fn tokenize(input: &String) -> Vec<String>{
     let vec: Vec<String> = Vec::new();
     // extract all tokens from input string and store in vector
-    let re = Regex::new(r"");
+    let re = Regex::new(r"").unwrap();
     return vec;
 }
 

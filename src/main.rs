@@ -6,19 +6,19 @@ mod printer;
 mod reader;
 pub mod utils;
 pub mod types;
-//mod env;
-//mod eval;
+mod env;
+mod eval;
 
 use std::fs::File;
 use std::io::{self, BufRead};
-use types::{RlType};
-use crate::types::{RlReturn, RlErr, Atom, AtomType};
+use types::{RlType, RlReturn, RlErr};
+use eval::eval;
 
 #[macro_use]
 extern crate lazy_static;
 
 extern crate rustyline;
-use rustyline::Editor;
+
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
@@ -49,7 +49,9 @@ fn READ(plain_input: &String) -> RlReturn {
 }
 
 fn EVAL(expression: RlType) -> RlReturn {
-    return Ok(expression);
+    // create first test environment
+    let default_env= env::RlEnv::init_global();
+    return eval(expression, default_env);
 }
 
 fn PRINT(text: RlType) -> String {

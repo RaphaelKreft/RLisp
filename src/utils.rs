@@ -11,8 +11,8 @@ pub fn input(text: &str) -> String {
     return input;
 }
 
-pub fn string_holds_integer(string: String) -> bool {
-    let re = Regex::new(r"[+-]?\b[0-9]+\b").unwrap();
+pub fn string_is_integer(string: String) -> bool {
+    let re = Regex::new(r"^-?[0-9]+$").unwrap();
     return re.is_match(&string);
 }
 

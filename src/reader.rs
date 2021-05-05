@@ -5,10 +5,9 @@ reader.rs:  Holds the parser for S-Expressions, that is used to build up the Syt
 
 use regex::{Regex};
 
-
-use super::types::{Atom, RlType, error};
-use crate::types::{RlReturn, RlErr};
+use super::types::{RlType, error, RlReturn, RlErr};
 use crate::types::RlErr::ErrString;
+use super::utils;
 
 
 // This is the only function visible and the Interface of the whole
@@ -17,7 +16,7 @@ pub fn read_str(line: String) -> RlReturn {
     //println!("Got line: {}", line);
     let tokens = tokenize(&line);
     if tokens.is_empty() {
-        return error("No valid tokens found");
+        return Err(error("No valid tokens found"));
     }
     //println!("Got tokens: {:?}", tokens);
     return read_from_tokens(&mut Reader::new(tokens));
@@ -28,8 +27,24 @@ fn read_from_tokens(reader: &mut Reader) -> RlReturn {
     let peeked_token = reader.peek()?;
     match &peeked_token[..] {
         "(" => read_list(reader),
+        "'" => read_quote(reader),
         _ => read_atom(reader),
     }
+}
+
+fn read_quote(reader: &mut Reader) -> RlReturn {
+    let mut str = String::new();
+    reader.next()?; // skip opening bracket
+    loop {
+        // return error if suddenly EOF occurs
+        let token = reader.peek()?;
+        if token == "'" {
+            reader.next()?;
+            break;
+        }
+        str.push_str(&reader.next()?);
+    }
+    return Ok(RlType::String(str));
 }
 
 fn read_list(reader: &mut Reader) -> RlReturn {
@@ -48,8 +63,12 @@ fn read_list(reader: &mut Reader) -> RlReturn {
 }
 
 fn read_atom(reader: &mut Reader) -> RlReturn {
-    let atom = reader.next()?;
-    return Ok(RlType::Atom(Atom::new(&atom.to_string())));
+    let atom = reader.next()?.clone();
+    return if utils::string_is_integer(atom.clone()) {
+        Ok(RlType::Int(atom.parse().unwrap()))
+    } else {
+        Ok(RlType::Symbol(atom.to_string()))
+    };
 }
 
 

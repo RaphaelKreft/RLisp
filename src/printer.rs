@@ -13,12 +13,15 @@ pub fn print_str(expression: RlType) -> String {
 
 fn print_str_rec(expression: RlType) -> String {
     return match expression {
-        RlType::Atom(value) => format!(" {} ", value.value),
+        RlType::Int(value) => format!("{}", value),
+        RlType::Symbol(i) => format!("{}", i),
+        RlType::String(i) => format!("'{}'", i),
         RlType::List(vec) => {
             let itered: Vec<String> = vec.into_iter().map(print_str_rec).collect();
-            let owned: String = format!("({})", itered.join(""));
+            let owned: String = format!("({})", itered.join(" "));
             owned
         }
+        RlType::Func(_f) => String::from("a func")
     }
 }
 

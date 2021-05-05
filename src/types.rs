@@ -2,17 +2,20 @@
 types.rs: Holds the types of the abstract syntax tree the parser works with
 */
 
-use super::utils;
 use crate::types::RlErr::ErrString;
 use std::fmt;
 
 // This type is needed for error handling since in rust this is just possible via return values
 pub type RlReturn = Result<RlType, RlErr>;
+//pub type RlEnv = HashMap<String, RlType>;
 
 // An RlType is either an Atom or a List of RlType
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum RlType {
-    Atom(Atom),
+    Int(i64),
+    Symbol(String),
+    String(String),
+    Func(fn(Vec<RlType>) -> RlReturn),
     List(Vec<RlType>),
 }
 
@@ -22,22 +25,11 @@ pub enum RlErr {
     ErrString(String),
 }
 
-#[derive(Debug)]
-pub enum AtomType {
-    Symbol,
-    Int,
-    Float,
-}
-
-#[derive(Debug)]
-pub struct Atom {
-    pub typ: AtomType,
-    pub value: String 
-}
-
+// defines which of the types are an atom
 pub fn is_atom(expr: RlType) -> bool {
     match expr {
-        RlType::Atom(_i) => true,
+        RlType::Int(_i) => true,
+        RlType::Symbol(_i) => true,
         _ => false,
     }
 }
@@ -51,19 +43,7 @@ impl fmt::Display for RlErr {
     }
 }
 
-impl Atom {
-    pub fn new(value: &String) -> Atom {
-        if utils::string_holds_integer(value.to_string()) {
-            return Atom{value: value.to_string(), typ: AtomType::Int};
-        } else if utils::string_holds_float(value.to_string()) {
-            return Atom{value: value.to_string(), typ: AtomType::Float};
-        } else {
-            return Atom{value: value.to_string(), typ: AtomType::Symbol};
-        }
-    }
-}
-
 // helper to create a new RlReturn value as Error
-pub fn error(str: &str) -> RlReturn {
-    return Err(ErrString(String::from(str)));
+pub fn error(str: &str) -> RlErr {
+    return ErrString(String::from(str));
 }

@@ -3,12 +3,11 @@ reader.rs:  Holds the parser for S-Expressions, that is used to build up the Syt
             Data_structure from input. The resulting Data_strucure is later used by eval.
 */
 
-use regex::{Regex};
+use regex::Regex;
 
-use super::types::{RlType, error, RlReturn, RlErr};
-use crate::types::RlErr::ErrString;
+use super::types::{error, RlErr, RlReturn, RlType};
 use super::utils;
-
+use crate::types::RlErr::ErrString;
 
 // This is the only function visible and the Interface of the whole
 // reader functionality
@@ -66,11 +65,14 @@ fn read_atom(reader: &mut Reader) -> RlReturn {
     let atom = reader.next()?.clone();
     return if utils::string_is_integer(atom.clone()) {
         Ok(RlType::Int(atom.parse().unwrap()))
+    } else if atom == "#t" {
+        Ok(RlType::Bool(true))
+    } else if atom == "#f" {
+        Ok(RlType::Bool(false))
     } else {
         Ok(RlType::Symbol(atom.to_string()))
     };
 }
-
 
 // extract all valid tokens out of a String
 pub fn tokenize(str: &str) -> Vec<String> {
@@ -97,23 +99,31 @@ pub fn tokenize(str: &str) -> Vec<String> {
 // It holds a list of tokens and has the functions peek, next
 struct Reader {
     position: usize,
-    tokens: Vec<String>
+    tokens: Vec<String>,
 }
 
 impl Reader {
     fn new(tokens: Vec<String>) -> Reader {
-        return Reader {position: 0, tokens};
+        return Reader {
+            position: 0,
+            tokens,
+        };
     }
     // Returns token at current position
     fn peek(&self) -> Result<String, RlErr> {
-        return Ok(self.tokens.get(self.position)
-                             .ok_or(ErrString("nothing to peek".to_string()))?.to_string());
+        return Ok(self
+            .tokens
+            .get(self.position)
+            .ok_or(ErrString("nothing to peek".to_string()))?
+            .to_string());
     }
     // Returns token at current position and moves to next position
     fn next(&mut self) -> Result<String, RlErr> {
         self.position += 1;
-        return Ok(self.tokens.get(self.position - 1)
-                             .ok_or(ErrString("nothing to peek".to_string()))?.to_string());
+        return Ok(self
+            .tokens
+            .get(self.position - 1)
+            .ok_or(ErrString("nothing to peek".to_string()))?
+            .to_string());
     }
 }
-

@@ -13,6 +13,7 @@ use std::fs::File;
 use std::io::{self, BufRead};
 use types::{RlType, RlReturn, RlErr};
 use eval::eval;
+use crate::env::RlEnv;
 
 #[macro_use]
 extern crate lazy_static;
@@ -22,9 +23,10 @@ extern crate rustyline;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
+    let env = env::init_global();
     if args.len() == 2 {
         // if argument was given open and operate on file input
-        load(&args[1]);
+        load(&args[1], env.clone());
     } else {
         // else operate in cmd mode
         let mut rl = rustyline::Editor::<()>::new();
@@ -36,7 +38,7 @@ fn main() {
                     if line == "exit" || line.starts_with(";"){
                         break;
                     }
-                    rep_wrapper(&line);},
+                    rep_wrapper(&line, env.clone());},
                 Err(_) => println!("No input"),
             }
         }
@@ -48,10 +50,8 @@ fn READ(plain_input: &String) -> RlReturn {
     return reader::read_str(plain_input.to_string());
 }
 
-fn EVAL(expression: RlType) -> RlReturn {
-    // create first test environment
-    let default_env= env::RlEnv::init_global();
-    return eval(expression, default_env);
+fn EVAL(expression: RlType, env: RlEnv) -> RlReturn {
+    return eval(expression,  env);
 }
 
 fn PRINT(text: RlType) -> String {
@@ -59,14 +59,14 @@ fn PRINT(text: RlType) -> String {
 }
 
 // Chain calls READ-EVAL-PRINT
-fn rep(to_process: &String) -> Result<String, RlErr> {
-    return Ok(PRINT(EVAL(READ(to_process)?)?));
+fn rep(to_process: &String, env: RlEnv) -> Result<String, RlErr> {
+    return Ok(PRINT(EVAL(READ(to_process)?, env)?));
 }
 
 // Interface to rep, to handle and print out results or errors nicely
-fn rep_wrapper(to_rep: &String) {
+fn rep_wrapper(to_rep: &String, env: RlEnv) {
     if to_rep.len() > 0 {
-        match rep(&to_rep) {
+        match rep(&to_rep, env) {
             Ok(res) => println!("{}", res),
             Err(err) => println!("Exception! {}: ", err),
         }
@@ -78,7 +78,7 @@ fn parse(toparse: &String) -> Result<String, RlErr> {
     return Ok(PRINT(READ(toparse)?));
 }
 
-fn load(filename: &String) {
+fn load(filename: &String, env: RlEnv) {
     if let Ok(lines) = read_lines(filename) {
         // Iterate over lines and check if they are ok(Or EOF)
         for line in lines {
@@ -86,7 +86,7 @@ fn load(filename: &String) {
                 if input.starts_with(";") {
                     continue;
                 }
-                rep_wrapper(&input);
+                rep_wrapper(&input, env.clone());
             }
         }
     } else {

@@ -17,10 +17,11 @@ fn print_str_rec(expression: RlType) -> String {
         RlType::Symbol(i) => format!("{}", i),
         RlType::String(i) => format!("'{}'", i),
         RlType::List(vec) => {
-            let itered: Vec<String> = vec.into_iter().map(print_str_rec).collect();
-            let owned: String = format!("({})", itered.join(" "));
+            let iter: Vec<String> = vec.into_iter().map(print_str_rec).collect();
+            let owned: String = format!("({})", iter.join(" "));
             owned
         }
+        RlType::Bool(b) => if b {String::from("#t")} else {String::from("#f")}
         RlType::Func(_f) => String::from("a func")
     }
 }

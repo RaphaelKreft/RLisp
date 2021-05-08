@@ -1,37 +1,46 @@
 use crate::types::{error, RlErr, RlReturn, RlType};
 use std::collections::HashMap;
 
+use std::rc::Rc;
+use std::cell::RefCell;
+
+
+pub type RlEnv = Rc<Env>;
+
 #[derive(Clone)]
-pub struct RlEnv {
-    env: HashMap<String, RlType>,
-    //    outer: Option<RlEnv>,
+pub struct Env {
+    env: RefCell<HashMap<String, RlType>>,
+    outer: Option<RlEnv>,
 }
 
-impl RlEnv {
-    pub(crate) fn init_global() -> RlEnv {
-        let mut env = RlEnv {
-            env: HashMap::new(), /*outer: None*/
-        };
-        env.set("load".to_string(), load());
-        env.set("car".to_string(), car());
-        env.set("cdr".to_string(), cdr());
-        env.set("cons".to_string(), cons());
-        env.set("+".to_string(), integer_arithmetics("+"));
-        env.set("-".to_string(), integer_arithmetics("-"));
-        env.set("*".to_string(), integer_arithmetics("*"));
-        env.set("/".to_string(), integer_arithmetics("/"));
-        return env;
-    }
+pub(crate) fn init_global() -> RlEnv {
+    let defenv = new_env(None);
+    set(defenv.clone(),"car".to_string(), car());
+    set(defenv.clone(),"cdr".to_string(), cdr());
+    set(defenv.clone(),"cons".to_string(), cons());
+    set(defenv.clone(),"+".to_string(), integer_arithmetics("+"));
+    set(defenv.clone(),"-".to_string(), integer_arithmetics("-"));
+    set(defenv.clone(),"*".to_string(), integer_arithmetics("*"));
+    set(defenv.clone(),"/".to_string(), integer_arithmetics("/"));
+    set(defenv.clone(),"eq".to_string(), equals());
+    return defenv.clone();
+}
 
-    fn set(&mut self, symbol: String, expr: RlType) {
-        self.env.insert(symbol, expr);
-    }
+pub fn new_env(outer: Option<RlEnv>) -> RlEnv{
+    return Rc::new(Env {
+        env: RefCell::new(HashMap::new()),
+        outer,
+    });
+}
 
-    pub(crate) fn get(&self, key: String) -> RlReturn {
-        match self.env.get(&key) {
-            None => Err(error(&format!("Symbol {} not found", key))),
-            Some(value) => Ok(value.clone()),
-        }
+pub(crate) fn set(envr: RlEnv, symbol: String, expr: RlType) {
+    envr.env.borrow_mut().insert(symbol.clone(), expr.clone());
+}
+
+pub(crate) fn get(envr: RlEnv, key: String) -> RlReturn {
+    match envr.env.borrow().get(&key) {
+        None => Err(error(&format!("Symbol {} not found", key))),
+        Some(value) => Ok(value.clone()),
     }
 }
 
@@ -114,29 +123,12 @@ fn cons() -> RlType {
     });
 }
 
-// load method for in-evaluation-use
-fn load() -> RlType {
+fn equals() -> RlType {
     return RlType::Func(|a| {
-        if a.len() != 1 {
-            return Err(error("load needs exactly one argument which is a string"));
-        }
-        let filename = match &a[0] {
-            RlType::String(s) => s,
-            _ => return Err(error("load a string as argument!")),
-        };
-        return if let Ok(lines) = super::read_lines(filename) {
-            // Iterate over lines and check if they are ok(Or EOF)
-            for line in lines {
-                if let Ok(input) = line {
-                    if input.starts_with(";") {
-                        continue;
-                    }
-                    super::rep_wrapper(&input);
-                }
-            }
-            Ok(RlType::Symbol(String::from("--File loaded successfully!--")))
+        return if a.len() != 2 {
+            Err(error("eq takes exactly 2 args"))
         } else {
-            Err(error("there was a problem with your file!"))
-        }
+            Ok(RlType::Bool(a[0] == a[1]))
+        };
     });
 }

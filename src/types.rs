@@ -10,9 +10,10 @@ pub type RlReturn = Result<RlType, RlErr>;
 //pub type RlEnv = HashMap<String, RlType>;
 
 // An RlType is either an Atom or a List of RlType
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub enum RlType {
     Int(i64),
+    Bool(bool),
     Symbol(String),
     String(String),
     Func(fn(Vec<RlType>) -> RlReturn),

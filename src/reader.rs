@@ -69,6 +69,8 @@ fn read_atom(reader: &mut Reader) -> RlReturn {
         Ok(RlType::Bool(true))
     } else if atom == "#f" {
         Ok(RlType::Bool(false))
+    } else if atom == "nil" {
+       Ok(RlType::Nil)
     } else {
         Ok(RlType::Symbol(atom.to_string()))
     };

@@ -4,20 +4,27 @@ types.rs: Holds the types of the abstract syntax tree the parser works with
 
 use crate::types::RlErr::ErrString;
 use std::fmt;
+use std::rc::Rc;
+use crate::env::RlEnv;
 
 // This type is needed for error handling since in rust this is just possible via return values
 pub type RlReturn = Result<RlType, RlErr>;
-//pub type RlEnv = HashMap<String, RlType>;
 
 // An RlType is either an Atom or a List of RlType
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Clone)]
 pub enum RlType {
     Int(i64),
     Bool(bool),
     Symbol(String),
     String(String),
     Func(fn(Vec<RlType>) -> RlReturn),
+    SelfDefinedFunc {
+        env: RlEnv,
+        params: Rc<Vec<RlType>>,
+        body: Rc<RlType>
+    },
     List(Vec<RlType>),
+    Nil,
 }
 
 // A Type to define Errors
@@ -31,6 +38,7 @@ pub fn is_atom(expr: RlType) -> bool {
     match expr {
         RlType::Int(_i) => true,
         RlType::Symbol(_i) => true,
+        RlType::Nil => true,
         _ => false,
     }
 }
@@ -40,6 +48,20 @@ impl fmt::Display for RlErr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             ErrString(i) => write!(f, "{}", i),
+        }
+    }
+}
+
+impl PartialEq for RlType {
+    fn eq(&self, other: &RlType) -> bool {
+        match (self, other) {
+            (RlType::Int(ref a), RlType::Int(ref b)) => a == b,
+            (RlType::Bool(ref a), RlType::Bool(ref b)) => a == b,
+            (RlType::Symbol(ref a), RlType::Symbol(ref b)) => a == b,
+            (RlType::Nil, RlType::Nil) => true,
+            (RlType::List(ref a), RlType::List(ref b)) => a == b,
+            (RlType::String(ref a), RlType::String(ref b)) => a == b,
+            _ => false,
         }
     }
 }

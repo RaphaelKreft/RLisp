@@ -4,10 +4,10 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::cell::RefCell;
 
-
+// Define RlEnv Type for convenience: the Env is wrapped in a Rc object, which allows easy referencing
 pub type RlEnv = Rc<Env>;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Env {
     env: RefCell<HashMap<String, RlType>>,
     outer: Option<RlEnv>,
@@ -15,14 +15,14 @@ pub struct Env {
 
 pub(crate) fn init_global() -> RlEnv {
     let defenv = new_env(None);
-    set(defenv.clone(),"car".to_string(), car());
-    set(defenv.clone(),"cdr".to_string(), cdr());
-    set(defenv.clone(),"cons".to_string(), cons());
-    set(defenv.clone(),"+".to_string(), integer_arithmetics("+"));
-    set(defenv.clone(),"-".to_string(), integer_arithmetics("-"));
-    set(defenv.clone(),"*".to_string(), integer_arithmetics("*"));
-    set(defenv.clone(),"/".to_string(), integer_arithmetics("/"));
-    set(defenv.clone(),"eq".to_string(), equals());
+    set(&defenv,"car".to_string(), car());
+    set(&defenv,"cdr".to_string(), cdr());
+    set(&defenv,"cons".to_string(), cons());
+    set(&defenv,"+".to_string(), integer_arithmetics("+"));
+    set(&defenv,"-".to_string(), integer_arithmetics("-"));
+    set(&defenv,"*".to_string(), integer_arithmetics("*"));
+    set(&defenv,"/".to_string(), integer_arithmetics("/"));
+    set(&defenv,"eq".to_string(), equals());
     return defenv.clone();
 }
 
@@ -33,17 +33,36 @@ pub fn new_env(outer: Option<RlEnv>) -> RlEnv{
     });
 }
 
-pub(crate) fn set(envr: RlEnv, symbol: String, expr: RlType) {
+pub fn new_env_bound(outer: Option<RlEnv>, names: Vec<RlType>, targets: Vec<RlType>) -> Result<RlEnv, RlErr> {
+    let env = new_env(outer);
+    return if names.len() != targets.len() {
+        Err(error("Error: Number of arguments are not matching!"))
+    } else {
+        for (i, name) in names.iter().enumerate() {
+            match name {
+                RlType::Symbol(s) => set(&env, s.to_string(), targets[i].clone()),
+                _ => return Err(error("Error: In self defined functions, Parameter names must be Symbols")),
+            }
+        }
+        Ok(env.clone())
+    }
+}
+
+pub(crate) fn set(envr: &RlEnv, symbol: String, expr: RlType) {
     envr.env.borrow_mut().insert(symbol.clone(), expr.clone());
 }
 
-pub(crate) fn get(envr: RlEnv, key: String) -> RlReturn {
+pub fn search(envr: &RlEnv, key: String) -> RlReturn {
     match envr.env.borrow().get(&key) {
-        None => Err(error(&format!("Symbol {} not found", key))),
+        None => match &envr.outer {
+            Some(x) => search(x, key),
+            None => Err(error(&format!("Symbol {} not found", key))),
+        }
         Some(value) => Ok(value.clone()),
     }
 }
 
+// Define The Functions for Integer arithmetics
 fn integer_arithmetics(sym: &str) -> RlType {
     match sym {
         "+" => RlType::Func(|a: Vec<RlType>| {
@@ -86,20 +105,23 @@ fn check_int_vector(vec: Vec<RlType>) -> Result<Vec<i64>, RlErr> {
     return Ok(new_vec);
 }
 
-// List operations are defined in separate functions for style reasons TODO: find better solution & List unpacking with cons/car/cdr?!
+// List operations are defined in separate functions for style reasons
+
+// car returns the first element of a given list
 fn car() -> RlType {
     return RlType::Func(|a| match &a[0] {
         RlType::List(l) => {
             return if l.len() != 2 {
-                Err(error("cdr needs a list of len 2"))
+                Err(error("car needs a list of len 2"))
             } else {
                 Ok(l.get(0).unwrap().clone())
             }
         }
-        _ => Err(error("cdr expects a list!")),
+        _ => Err(error("car expects a list!")),
     });
 }
 
+// cdr returns the second part(the rest) of a given list
 fn cdr() -> RlType {
     return RlType::Func(|a| match &a[0] {
         RlType::List(l) => {

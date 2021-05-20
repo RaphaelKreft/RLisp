@@ -23,7 +23,7 @@ fn print_str_rec(expression: RlType) -> String {
         }
         RlType::Bool(b) => if b {String::from("#t")} else {String::from("#f")}
         RlType::Func(_) | RlType::SelfDefinedFunc { .. } => String::from("#function"),
-        RlType::Nil => String::from("NIL"),
+        RlType::Nil => String::from("#nil"),
     }
 }
 

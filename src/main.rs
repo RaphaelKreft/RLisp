@@ -8,9 +8,9 @@ pub mod utils;
 pub mod types;
 mod env;
 mod eval;
+mod stdlib;
 
-use std::fs::File;
-use std::io::{self, BufRead};
+use std::fs;
 use types::{RlType, RlReturn, RlErr};
 use eval::eval;
 use crate::env::RlEnv;
@@ -20,10 +20,21 @@ extern crate lazy_static;
 
 extern crate rustyline;
 
+fn self_defined_prebuild() -> Vec<String> {
+    vec![
+        "(define caar (lambda (x) (car (car x))))".to_string(),
+        "(define cadr (lambda (x) (car (cdr x))))".to_string(),
+    ]
+}
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
     let env = env::init_global();
+
+    for sdef in self_defined_prebuild().iter() {
+        rep_wrapper(sdef, env.clone());
+    }
+
     if args.len() == 2 {
         // if argument was given open and operate on file input
         load(&args[1], env.clone());
@@ -73,60 +84,13 @@ fn rep_wrapper(to_rep: &String, env: RlEnv) {
     }
 }
 
-// For now parse an load are in the main -> move to env later?
-fn parse(toparse: &String) -> Result<String, RlErr> {
-    return Ok(PRINT(READ(toparse)?));
+fn read_file_string(filename: String) -> String {
+    return fs::read_to_string(filename).expect("#nil");
 }
 
 fn load(filename: &String, env: RlEnv) {
-    if let Ok(lines) = read_lines(filename) {
-        // Iterate over lines and check if they are ok(Or EOF)
-        for line in lines {
-            if let Ok(input) = line {
-                if input.starts_with(";") {
-                    continue;
-                }
-                rep_wrapper(&input, env.clone());
-            }
-        }
-    } else {
-        println!{"there was a problem with your file!"};
-    }
-}
-
-// Read lines from a file TODO: Add preprocessing for multiline expressions
-fn read_lines(filename: &String) -> io::Result<io::Lines<io::BufReader<File>>> {
-    let file = File::open(filename)?;
-    Ok(io::BufReader::new(file).lines())
-}
-
-#[cfg(test)]
-mod test {
-    use crate::types::{RlType, Atom, AtomType};
-
-    #[test]
-    fn tokenize_test() {
-        assert_eq!(vec!["(", "define", "x", "5", ")"], super::reader::tokenize("(define x 5)"));
-        assert_eq!(vec!["5"], super::reader::tokenize("   5   "));
-        assert_eq!(vec!["(", "parse", "'", "(", "+", "2", "3", ")", "'", ")"], super::reader::tokenize("(parse '(+ 2 3)')"));
-    }
-
-    #[test]
-    fn parse_to_ast_test() {
-        let ast = super::reader::read_str("5".to_string()).ok();
-        let ast2 = super::reader::read_str("(+)".to_string()).ok();
-        let ast3 = super::reader::read_str("(+ 2 (*2 3))".to_string()).ok();
-        assert_eq!(ast, RlType::Atom(Atom{value: "5".to_string(), typ: AtomType::Int}));
-        assert_eq!(ast2, RlType::List(vec![RlType::Atom(Atom{value: "+".to_string(), typ: AtomType.Symbol})]));
-        assert_eq!(ast3, RlType::List(vec![RlType::Atom(Atom{value: "+".to_string(), typ: AtomType.Symbol}),
-                                           RlType::Atom(Atom{value: "2".to_string(), typ: AtomType.Int}),
-                                           RlType::List(vec![RlType::Atom(Atom{value: "*".to_string(), typ: AtomType.Int}),
-                                           RlType::Atom(Atom{value: "2".to_string(), typ: AtomType.Int}),
-                                                             RlType::Atom(Atom{value: "3".to_string(), typ: AtomType.Int})])]));
-    }
-
-    #[test]
-    fn read_print_test() {
-
-    }
+    let rstring = read_file_string(filename.to_string());
+    println!("{:?}", rstring);
+    let to_execute = format!("(do {})", rstring);
+    rep_wrapper(&to_execute, env)
 }

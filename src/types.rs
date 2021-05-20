@@ -5,6 +5,7 @@ types.rs: Holds the types of the abstract syntax tree the parser works with
 use crate::types::RlErr::ErrString;
 use std::fmt;
 use std::rc::Rc;
+use std::cell::RefCell;
 use crate::env::RlEnv;
 
 // This type is needed for error handling since in rust this is just possible via return values
@@ -39,6 +40,9 @@ pub fn is_atom(expr: RlType) -> bool {
         RlType::Int(_i) => true,
         RlType::Symbol(_i) => true,
         RlType::Nil => true,
+        RlType::Bool(_i) => true,
+        RlType::String(_i) => true,
+        RlType::List(l) if l.len() == 0 => true,
         _ => false,
     }
 }

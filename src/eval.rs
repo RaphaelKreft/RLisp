@@ -24,24 +24,27 @@ pub fn eval(expression: RlType, environment: RlEnv) -> RlReturn {
                         eval(content[1].clone(), environment.clone())
                     },
                     RlType::Symbol(s) if s == "cond" => {
-                        if content[1..].len() < 2 {
-                            return Err(error("Error: cond expects at least 2 args"));
-                        }
-                        let conditional = eval(content[1].clone(), environment.clone())?;
-                        match conditional {
-                            RlType::Bool(false) => {
-                                if content[1..].len() == 2 {
-                                    Ok(RlType::Nil)
-                                } else {
-                                    eval(content[3].clone(), environment.clone())
+                        let mut pairs = vec![];
+                        // error checking
+                        match content[1].clone() {
+                            RlType::List(l) if l.len() == 0 => {return Ok(RlType::Nil)},
+                            RlType::List(l) => {for i in l.iter() {
+                                match i {
+                                    RlType::List(l) if l.len() == 2 => {pairs.push(l.clone())},
+                                    _ => {return Err(error("Error: Wrong pattern for cond"))}
                                 }
-                            },
-                            RlType::Bool(true) if content[1..].len() >= 2 => {
-                                eval(content[2].clone(), environment.clone())
-                            },
-                            // Return nil if first arg was no conditional or no true fork is given
-                            _ => Ok(RlType::Nil)
+                            }},
+                            _ => return Err(error("Error: cond needs a list of pairs as arguments")),
                         }
+                        // select first true conditional
+                        let mut expression = RlType::Nil;
+                        for pair in pairs {
+                            match eval(pair[0].clone(), environment.clone())? {
+                                RlType::Bool(true) => {expression = pair[1].clone();break;},
+                                _ => {continue;},
+                            }
+                        }
+                        return eval(expression, environment.clone());
                     },
                     RlType::Symbol(s) if s == "define" => {
                         return if content[1..].len() != 2 {
@@ -91,8 +94,14 @@ pub fn eval(expression: RlType, environment: RlEnv) -> RlReturn {
                             RlType::String(s) => s,
                             _ => return Err(error("load a string as argument!")),
                         };
-                        super::load(filename, environment);
+                        super::load(filename, environment.clone());
                         Ok(RlType::Nil)
+                    },
+                    RlType::Symbol(s) if s == "do" => {
+                        for expression in content[1..content.len()-1].iter() {
+                            let _ = eval(expression.clone(), environment.clone());
+                        }
+                        return eval(content.last().unwrap_or(&RlType::Nil).clone(), environment.clone());
                     },
                     RlType::Symbol(s) if s == "lambda" => {
                         match (content[1].clone(), content[2].clone()) {
@@ -103,7 +112,7 @@ pub fn eval(expression: RlType, environment: RlEnv) -> RlReturn {
                                     body: Rc::new(body)
                                 })
                             },
-                            _ => Err(error("Error: lambda takes a list of parameters and an sexpression as body!"))
+                            _ => Err(error("Error: lambda takes a list of parameters and an s-expression as body!"))
                         }
                     },
                     _ => {// Else evaluate every subexpression of the list and apply

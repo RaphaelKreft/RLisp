@@ -1,6 +1,6 @@
 /*
 reader.rs:  Holds the parser for S-Expressions, that is used to build up the Sytaxtree
-            Data_structure from input. The resulting Data_strucure is later used by eval.
+            Data_structure from input. The resulting Data_structure is later used by eval.
 */
 
 use regex::Regex;
@@ -26,12 +26,12 @@ fn read_from_tokens(reader: &mut Reader) -> RlReturn {
     let peeked_token = reader.peek()?;
     match &peeked_token[..] {
         "(" => read_list(reader),
-        "'" => read_quote(reader),
+        "'" => read_string(reader),
         _ => read_atom(reader),
     }
 }
 
-fn read_quote(reader: &mut Reader) -> RlReturn {
+fn read_string(reader: &mut Reader) -> RlReturn {
     let mut str = String::new();
     reader.next()?; // skip opening bracket
     loop {
@@ -70,7 +70,7 @@ fn read_atom(reader: &mut Reader) -> RlReturn {
     } else if atom == "#f" {
         Ok(RlType::Bool(false))
     } else if atom == "#nil" {
-       Ok(RlType::Nil)
+        Ok(RlType::Nil)
     } else {
         Ok(RlType::Symbol(atom.to_string()))
     };

@@ -3,8 +3,7 @@ printer.rs: Holds functions to transform an RlType (AST) the Evaluator works wit
             back to a string.
 */
 
-use super::types::{RlType};
-
+use super::types::RlType;
 
 pub fn print_str(expression: RlType) -> String {
     let string: String = print_str_rec(expression);
@@ -21,9 +20,14 @@ fn print_str_rec(expression: RlType) -> String {
             let owned: String = format!("({})", iter.join(" "));
             owned
         }
-        RlType::Bool(b) => if b {String::from("#t")} else {String::from("#f")}
+        RlType::Bool(b) => {
+            if b {
+                String::from("#t")
+            } else {
+                String::from("#f")
+            }
+        }
         RlType::Func(_) | RlType::SelfDefinedFunc { .. } => String::from("#function"),
         RlType::Nil => String::from("#nil"),
-    }
+    };
 }
-

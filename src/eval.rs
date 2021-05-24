@@ -2,8 +2,8 @@
 eval.rs: holds the functionality of the evaluator of the Interpreter!
 */
 
-use super::types::{RlType, RlReturn, error};
-use super::env::{RlEnv, new_env, search, set};
+use super::env::{new_env, search, set, RlEnv};
+use super::types::{error, RlReturn, RlType};
 use crate::env::new_env_bound;
 use std::rc::Rc;
 
@@ -17,35 +17,29 @@ pub fn eval(expression: RlType, environment: RlEnv) -> RlReturn {
                 // if list is not empty first check first element if it is Symbol triggering special form
                 let switcher = &content[0];
                 match switcher {
-                    RlType::Symbol(s) if s == "quote" => {
-                        Ok(content[1].clone())
-                    },
+                    RlType::Symbol(s) if s == "quote" => Ok(content[1].clone()),
                     RlType::Symbol(s) if s == "eval" => {
                         eval(content[1].clone(), environment.clone())
-                    },
+                    }
                     RlType::Symbol(s) if s == "cond" => {
-                        let mut pairs = vec![];
-                        // error checking
-                        match content[1].clone() {
-                            RlType::List(l) if l.len() == 0 => {return Ok(RlType::Nil)},
-                            RlType::List(l) => {for i in l.iter() {
-                                match i {
-                                    RlType::List(l) if l.len() == 2 => {pairs.push(l.clone())},
-                                    _ => {return Err(error("Error: Wrong pattern for cond"))}
-                                }
-                            }},
-                            _ => return Err(error("Error: cond needs a list of pairs as arguments")),
-                        }
-                        // select first true conditional
-                        let mut expression = RlType::Nil;
-                        for pair in pairs {
-                            match eval(pair[0].clone(), environment.clone())? {
-                                RlType::Bool(true) => {expression = pair[1].clone();break;},
-                                _ => {continue;},
+                        let pairs = content[1..].to_vec().clone();
+                        for pair in pairs.iter() {
+                            match pair {
+                                RlType::List(l) if l.len() == 2 => {
+                                    match eval(l[0].clone(), environment.clone())? {
+                                        RlType::Bool(true) => {
+                                            return eval(l[1].clone(), environment.clone());
+                                        }
+                                        _ => {
+                                            continue;
+                                        }
+                                    }
+                                },
+                                _ => return Err(error("Error: Wrong pattern for cond")),
                             }
                         }
-                        return eval(expression, environment.clone());
-                    },
+                        return Ok(RlType::Nil);
+                    }
                     RlType::Symbol(s) if s == "define" => {
                         return if content[1..].len() != 2 {
                             Err(error("Error: define takes exactly 2 ars"))
@@ -54,11 +48,11 @@ pub fn eval(expression: RlType, environment: RlEnv) -> RlReturn {
                                 RlType::Symbol(s) => s.to_string(),
                                 _ => return Err(error("first arg of define must be a symbol")),
                             };
-                            let target = eval(content[2].clone(),  environment.clone())?;
+                            let target = eval(content[2].clone(), environment.clone())?;
                             set(&environment, key.clone(), target.clone());
                             Ok(target)
                         }
-                    },
+                    }
                     RlType::Symbol(s) if s == "let" => {
                         return if content[1..].len() != 2 {
                             Err(error("Error: let takes exactly 2 ars"))
@@ -73,19 +67,21 @@ pub fn eval(expression: RlType, environment: RlEnv) -> RlReturn {
                             for binding in bindings_list.iter() {
                                 let b = match &binding {
                                     RlType::List(l) => Ok(l),
-                                    _ => Err(error("Error: bindings in let needs to be lists of len 2"))
+                                    _ => Err(error(
+                                        "Error: bindings in let needs to be lists of len 2",
+                                    )),
                                 }?;
                                 let key = match &b[0] {
                                     RlType::Symbol(s) => s.to_string(),
                                     _ => return Err(error("first arg of define must be a symbol")),
                                 };
                                 set(&new_env, key, eval(b[1].clone(), new_env.clone())?);
-                                }
+                            }
 
                             // Evaluate body with new environment
                             eval(content[2].clone(), new_env.clone())
-                        }
-                    },
+                        };
+                    }
                     RlType::Symbol(s) if s == "load" => {
                         if content[1..].len() != 1 {
                             return Err(error("load needs exactly one argument which is a string"));
@@ -96,13 +92,16 @@ pub fn eval(expression: RlType, environment: RlEnv) -> RlReturn {
                         };
                         super::load(filename, environment.clone());
                         Ok(RlType::Nil)
-                    },
+                    }
                     RlType::Symbol(s) if s == "do" => {
-                        for expression in content[1..content.len()-1].iter() {
+                        for expression in content[1..content.len() - 1].iter() {
                             let _ = eval(expression.clone(), environment.clone());
                         }
-                        return eval(content.last().unwrap_or(&RlType::Nil).clone(), environment.clone());
-                    },
+                        return eval(
+                            content.last().unwrap_or(&RlType::Nil).clone(),
+                            environment.clone(),
+                        );
+                    }
                     RlType::Symbol(s) if s == "lambda" => {
                         match (content[1].clone(), content[2].clone()) {
                             (RlType::List(l1), body) => {
@@ -114,23 +113,24 @@ pub fn eval(expression: RlType, environment: RlEnv) -> RlReturn {
                             },
                             _ => Err(error("Error: lambda takes a list of parameters and an s-expression as body!"))
                         }
-                    },
-                    _ => {// Else evaluate every subexpression of the list and apply
+                    }
+                    _ => {
+                        // Else evaluate every subexpression of the list and apply
                         let mut evaluated = Vec::new();
                         for element in content.iter() {
                             evaluated.push(eval(element.clone(), environment.clone())?);
                         }
                         apply(evaluated)
-                    },
+                    }
                 }
-            }
-        },
+            };
+        }
         RlType::Symbol(s) => Ok(search(&environment, s)?),
-        _ => Ok(expression.clone())
+        _ => Ok(expression.clone()),
     }
 }
 
-pub fn apply(args: Vec<RlType>) -> RlReturn{
+pub fn apply(args: Vec<RlType>) -> RlReturn {
     let func = args[0].clone();
     match func {
         RlType::Func(i) => i(args[1..].to_vec()),
@@ -141,10 +141,10 @@ pub fn apply(args: Vec<RlType>) -> RlReturn{
         } => {
             let params = &*temp_params;
             let body = &*temp_body;
-            let function_environment = new_env_bound(Some(stored_env.clone()), params.clone(), args[1..].to_vec())?;
+            let function_environment =
+                new_env_bound(Some(stored_env.clone()), params.clone(), args[1..].to_vec())?;
             eval(body.clone(), function_environment.clone())
-        },
+        }
         _ => Err(error("Expected Function to apply!")),
     }
 }
-

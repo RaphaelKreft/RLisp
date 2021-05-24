@@ -1,17 +1,16 @@
 /*
-types.rs: Holds the types of the abstract syntax tree the parser works with
+types.rs: Holds the types of the abstract syntax tree the parser and evaluator work with
 */
 
+use crate::env::RlEnv;
 use crate::types::RlErr::ErrString;
 use std::fmt;
 use std::rc::Rc;
-use std::cell::RefCell;
-use crate::env::RlEnv;
 
-// This type is needed for error handling since in rust this is just possible via return values
+/// This type is needed for error handling since in rust that's just possible via return values
 pub type RlReturn = Result<RlType, RlErr>;
 
-// An RlType is either an Atom or a List of RlType
+/// An RlType is either an Atom or a List of RlType
 #[derive(Debug, Clone)]
 pub enum RlType {
     Int(i64),
@@ -22,19 +21,19 @@ pub enum RlType {
     SelfDefinedFunc {
         env: RlEnv,
         params: Rc<Vec<RlType>>,
-        body: Rc<RlType>
+        body: Rc<RlType>,
     },
     List(Vec<RlType>),
     Nil,
 }
 
-// A Type to define Errors
+/// A Type to define Errors
 #[derive(Debug)]
 pub enum RlErr {
     ErrString(String),
 }
 
-// defines which of the types are an atom
+/// defines which of the types are an atom: Int, Symbol, String, Nil, Bool, Empty list
 pub fn is_atom(expr: RlType) -> bool {
     match expr {
         RlType::Int(_i) => true,
@@ -47,7 +46,7 @@ pub fn is_atom(expr: RlType) -> bool {
     }
 }
 
-// Implement this trait so that errors are shown nicely
+/// Implement the display trait so that errors are shown nicely
 impl fmt::Display for RlErr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
@@ -56,6 +55,8 @@ impl fmt::Display for RlErr {
     }
 }
 
+/// Implement the PartialEq trait for the RlType so that comparisons are possible. This is mostly used
+/// for the "eq" functionality of RLisp
 impl PartialEq for RlType {
     fn eq(&self, other: &RlType) -> bool {
         match (self, other) {
@@ -70,7 +71,7 @@ impl PartialEq for RlType {
     }
 }
 
-// helper to create a new RlReturn value as Error
+/// helper to create a new RlError, this is just for convinience
 pub fn error(str: &str) -> RlErr {
     return ErrString(String::from(str));
 }

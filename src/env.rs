@@ -1,9 +1,9 @@
-use crate::types::{error, RlErr, RlReturn, RlType};
 use crate::stdlib::core;
+use crate::types::{error, RlErr, RlReturn, RlType};
 use std::collections::HashMap;
 
-use std::rc::Rc;
 use std::cell::RefCell;
+use std::rc::Rc;
 
 // Define RlEnv Type for convenience: the Env is wrapped in a Rc object, which allows easy referencing
 pub type RlEnv = Rc<Env>;
@@ -22,14 +22,18 @@ pub(crate) fn init_global() -> RlEnv {
     return defenv.clone();
 }
 
-pub fn new_env(outer: Option<RlEnv>) -> RlEnv{
+pub fn new_env(outer: Option<RlEnv>) -> RlEnv {
     return Rc::new(Env {
         env: RefCell::new(HashMap::new()),
         outer,
     });
 }
 
-pub fn new_env_bound(outer: Option<RlEnv>, names: Vec<RlType>, targets: Vec<RlType>) -> Result<RlEnv, RlErr> {
+pub fn new_env_bound(
+    outer: Option<RlEnv>,
+    names: Vec<RlType>,
+    targets: Vec<RlType>,
+) -> Result<RlEnv, RlErr> {
     let env = new_env(outer);
     return if names.len() != targets.len() {
         Err(error("Error: Number of arguments are not matching!"))
@@ -37,11 +41,15 @@ pub fn new_env_bound(outer: Option<RlEnv>, names: Vec<RlType>, targets: Vec<RlTy
         for (i, name) in names.iter().enumerate() {
             match name {
                 RlType::Symbol(s) => set(&env, s.to_string(), targets[i].clone()),
-                _ => return Err(error("Error: In self defined functions, Parameter names must be Symbols")),
+                _ => {
+                    return Err(error(
+                        "Error: In self defined functions, Parameter names must be Symbols",
+                    ))
+                }
             }
         }
         Ok(env.clone())
-    }
+    };
 }
 
 pub(crate) fn set(envr: &RlEnv, symbol: String, expr: RlType) {
@@ -53,9 +61,7 @@ pub fn search(envr: &RlEnv, key: String) -> RlReturn {
         None => match &envr.outer {
             Some(x) => search(x, key),
             None => Err(error(&format!("Symbol {} not found", key))),
-        }
+        },
         Some(value) => Ok(value.clone()),
     }
 }
-
-

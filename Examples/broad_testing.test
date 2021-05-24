@@ -1,0 +1,3 @@
+; This file contains a bunch of tests that should show that all basic language expressions work as expected
+; I therefore also included some programs from the homework that was given in the lecture that this interpreter is
+; part of as a project

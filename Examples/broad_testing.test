@@ -4,22 +4,37 @@
 
 ; 1. Integer arithmetics
 
-(println 'Simple addition (+ 1 1 1 1)')
+(println [Simple addition (+ 1 1 1 1)])
 (println (+ 1 1 1 1))
 
-(println 'Simple subtraction (- 1 1 2)')
+(println [Simple subtraction (- 1 1 2)])
 (println (- 1 1 2))
 
-(println 'Simple division (/ 10 2)')
+(println [Simple division (/ 10 2)])
 (println (/ 10 2))
 
-(println 'Simple multiplication (* 1 2 3 4)')
+(println [Simple multiplication (* 1 2 3 4)])
 (println (+ 1 2 3 4))
 
-(println 'More complex (* 2 (+ 5 (- 22 19)))')
+(println [More complex (* 2 (+ 5 (- 22 19)))])
 (println (* 2 (+ 5 (- 22 19))))
 
 ; 2. List operations
+
+(println [create a list: (cons 1 2 3)])
+(println (cons 1 2 3))
+
+(println [get first element of a list: (car (cons 1 2 3))])
+(println (car (cons 1 2 3)))
+
+(println [use cdr(normal case): (cdr (cons 1 2 3))])
+(println (cdr (cons 1 2 3)))
+
+(println [use cdr(corner case): (cdr (1))])
+(println (cdr (1)))
+
+(println [complex expression: (cdr (cons 1 2 3))])
+(println (cdr (cons 1 2 3)))
 
 ; 3. Conditions, type-checks and equality
 

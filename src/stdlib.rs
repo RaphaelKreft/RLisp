@@ -18,6 +18,7 @@ pub fn core() -> Vec<(&'static str, RlType)> {
         ("car", car()),
         ("cdr", cdr()),
         ("cons", cons()),
+        ("list", list()),
         ("+", integer_arithmetics("+")),
         ("-", integer_arithmetics("-")),
         ("*", integer_arithmetics("*")),
@@ -181,11 +182,8 @@ fn cdr() -> RlType {
         // check if argument given to cdr is a List
         RlType::List(l) => {
             // if list is empty then return error
-            return if l.len() < 1 {
-                Err(error("cdr needs a list with min len 1!"))
-            } else if l.len() == 1 {
-                // if list length is one it has no rest to cdr -> return empty list (inspired by Root of Lisp)
-                Ok(RlType::List(vec![]))
+            return if l.len() < 2 {
+                Err(error("cdr needs a list with min len 2!"))
             } else {
                 // else just return the list without the first element
                 Ok(RlType::List(l[1..].to_vec().clone()))
@@ -197,8 +195,27 @@ fn cdr() -> RlType {
 }
 
 /**
+    This function returns the Function(RLType::Func) that performs the "list" operation.
+    List is used to build lists from given elements.
+
+    Returns: The Function that performs the cons-operation (Type RLType::Func)
+*/
+fn list() -> RlType {
+    /// Function that performs the cons operation
+    return RlType::Func(|a| {
+        // check if given list has min 1 element
+        return if a.len() < 1 {
+            Err(error("list needs min 1 argument"))
+        } else {
+            // if list has two elements, create a List/Pair and returns it
+            Ok(RlType::List(a))
+        };
+    });
+}
+
+/**
     This function returns the Function(RLType::Func) that performs the "cons" operation.
-    cons is used to build lists from given elements.
+    cons is used to prepend an element to a list.
 
     Returns: The Function that performs the cons-operation (Type RLType::Func)
 */
@@ -209,8 +226,11 @@ fn cons() -> RlType {
         return if a.len() != 2 {
             Err(error("cons needs 2 arguments"))
         } else {
-            // if list has two elements, create a List/Pair and returns it
-            Ok(RlType::List(a))
+            return match &a[1] {
+                // check if second argument is a list -> must be for cons!
+                RlType::List(l) => Ok(RlType::List(vec![a[0].clone(), RlType::List(l.clone())])),
+                _ => Err(error("second arg of cons must be a list!")),
+            };
         };
     });
 }

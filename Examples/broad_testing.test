@@ -21,20 +21,29 @@
 
 ; 2. List operations
 
-(println [create a list: (cons 1 2 3)])
-(println (cons 1 2 3))
+(println [create a list(nothing nested, just a vector internally): (list 1 2 3)])
+(println (list 1 2 3))
+
+(println [get the rest o fa list: (tail (list 1 2 3))])
+(println (tail (list 1 2 3)))
+
+(println [create a list as in Root of Lisp or scheme (nested pairs): (cons 1 (cons 2 (cons 3 ())))])
+(println (cons 1 (cons 2 (cons 3 ()))))
 
 (println [get first element of a list: (car (cons 1 2 3))])
 (println (car (cons 1 2 3)))
 
 (println [use cdr(normal case): (cdr (cons 1 2 3))])
-(println (cdr (cons 1 2 3)))
+(println (cdr (cons 1 2 )))
 
 (println [use cdr(corner case): (cdr (1))])
 (println (cdr (1)))
 
-(println [complex expression: (cdr (cons 1 2 3))])
-(println (cdr (cons 1 2 3)))
+(println [prepend value to a list: (cons 1 (2 3))])
+(println (cons 1 (2 3)))
+
+(println [complex expression with nested list: (car (cdr (cons 1 (cons 2 (cons 3 ())))))])
+(println (car (cdr (cons 1 (cons 2 (cons 3 ()))))))
 
 ; 3. Conditions, type-checks and equality
 

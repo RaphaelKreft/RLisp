@@ -138,18 +138,19 @@ dividing by 0 leads to an error and that it's a full number division rounding do
 
 All operators currently need at least a number of 2 arguments.
 
-**2. CAR / CDR / CONS / LIST**:
+**2. CAR / CDR / CONS / LIST / TAIL**:
 
-Are the standard List operators in LISP, The list representation  is not pairwise as in Root of Lisp, since this is not
-needed in an implementation in Rust:
+To support nested pair structures (= Lists in Root of Lisp / Scheme) and normal sequential lists, RLisp has different
+functions for each case. 
 
 1. `list` creates a list of the arguments given to it. Example: `(list 1 'abc', (1,2), #f)` creates a list 
     `(1, [abc], (1,2), #f)`
 2. `car` returns the first element of a given list, raises an error on empty lists. Example: `(car (5,6))` -> `5`
-3. `cdr` returns the rest of the list, excluding the first element, raises an error on empty lists. \n
+3. `cdr` returns the second element of a pair, raises an error on empty lists. \n
     Example: `(cdr (1,2,3))` -> `(2,3)`
 4. `cons` takes exactly 2 arguments. The second one must be a list! cons then prepends the first argument to the list.
     Example: `(cons 12 ())` -> `(12, ())`
+5. `tail` given a list, tail returns all elements except the first one as a list.
     
 **3. ATOM? / LIST? / NIL? / NUMBER?**:
 

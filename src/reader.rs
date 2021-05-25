@@ -27,7 +27,7 @@ pub fn read_str(string: String) -> RlReturn {
     if tokens.is_empty() {
         return Err(error("No valid tokens found"));
     }
-    println!("Got tokens: {:?}", tokens);
+    //println!("Got tokens: {:?}", tokens);
     // use read_from_tokens to build up Syntax-tree from tokens
     return read_from_tokens(&mut Reader::new(tokens));
 }

@@ -19,6 +19,7 @@ pub fn core() -> Vec<(&'static str, RlType)> {
         ("cdr", cdr()),
         ("cons", cons()),
         ("list", list()),
+        ("tail", tail()),
         ("+", integer_arithmetics("+")),
         ("-", integer_arithmetics("-")),
         ("*", integer_arithmetics("*")),
@@ -30,8 +31,8 @@ pub fn core() -> Vec<(&'static str, RlType)> {
         (
             "println",
             RlType::Func(|a| {
-                println!("{}", print_str(RlType::List(a)));
-                Ok(RlType::Nil)
+                println!("{}", print_str(RlType::List(a.clone())));
+                Ok(RlType::List(a.clone()))
             }),
         ),
         (
@@ -171,8 +172,7 @@ fn car() -> RlType {
 
 /**
     This function returns the Function(RLType::Func) that performs the "cdr" operation.
-    cdr returns the second part(the rest) of a given list if list has one element return NIL as
-    this is the return value of cdr on a one element list in normal lisp (lists are terminated with NIL)
+    cdr returns the second part(the rest) of a given pair.
 
     Returns: The Function that performs the cdr-operation (Type RLType::Func)
 */
@@ -182,11 +182,11 @@ fn cdr() -> RlType {
         // check if argument given to cdr is a List
         RlType::List(l) => {
             // if list is empty then return error
-            return if l.len() < 2 {
+            return if l.len() != 2 {
                 Err(error("cdr needs a list with min len 2!"))
             } else {
                 // else just return the list without the first element
-                Ok(RlType::List(l[1..].to_vec().clone()))
+                Ok(l[1].clone())
             }
         }
         // if argument given to car is no list, return an Error
@@ -195,10 +195,34 @@ fn cdr() -> RlType {
 }
 
 /**
-    This function returns the Function(RLType::Func) that performs the "list" operation.
-    List is used to build lists from given elements.
+    returns a function performing the tail operation. This function returns all elements of a given
+    list except the first one, in a new list.
 
-    Returns: The Function that performs the cons-operation (Type RLType::Func)
+    Returns: The Function(Type RlType::Func) that performs tail operation
+*/
+fn tail() -> RlType {
+    /// Function that performs tail operation
+    return RlType::Func(|a| match &a[0] {
+        // check if argument given to cdr is a List
+        RlType::List(l) => {
+            // if list is empty then return error
+            return if l.len() < 2 {
+                Err(error("tail a list of min len 2"))
+            } else {
+                // else just return the list without the first element
+                Ok(RlType::List(l[1..].to_vec().clone()))
+            }
+        }
+        // if argument given to car is no list, return an Error
+        _ => Err(error("tail expects a list!")),
+    });
+}
+
+/**
+    This function returns the Function(RLType::Func) that performs the "list" operation.
+    List is used to build lists from given elements. Recursively uses cons.
+
+    Returns: The Function that performs the list-operation (Type RLType::Func)
 */
 fn list() -> RlType {
     /// Function that performs the cons operation

@@ -4,7 +4,7 @@ stdlib.rs: holds the definition of all non-special form language atoms of RLisp 
  */
 
 // load needed sibling-modules
-use crate::printer::print_str;
+use crate::printer::{print_str_rec};
 use crate::types::{error, is_atom, RlErr, RlType};
 
 /**
@@ -31,8 +31,9 @@ pub fn core() -> Vec<(&'static str, RlType)> {
         (
             "println",
             RlType::Func(|a| {
-                println!("{}", print_str(RlType::List(a.clone())));
-                Ok(RlType::List(a.clone()))
+                if a.len() != 1 {return Err(error("println takes exactly one argument"))}
+                println!("{}", print_str_rec(a[0].clone()));
+                Ok(a[0].clone())
             }),
         ),
         (

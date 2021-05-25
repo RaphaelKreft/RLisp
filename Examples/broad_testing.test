@@ -47,14 +47,17 @@
 
 ; 3. Conditions, type-checks and equality
 
-(println 'Simple Conditional (cond ((eq? 12 6) 1) (#t 2))')
+(println [Simple Conditional (cond ((eq? 12 6) 1) (#t 2))])
 (println (cond ((eq? 12 6) 1) (#t 2)))
 
-(println 'Typecheck list (list? (1,2,3))')
+(println [Typecheck list (list? (1,2,3))])
 (println (list? (1,2,3)))
 
-(println 'Typecheck number (number? 12)')
+(println [Typecheck number (number? 12)])
 (println (number? 12))
 
-(println '')
+(println [Check if given expression is an atom: (atom? '12)])
+(println (atom? '12))
+
+; 4.
 

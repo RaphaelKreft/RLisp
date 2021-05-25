@@ -25,7 +25,7 @@ pub fn print_str(expression: RlType) -> String {
     Arguments:  expression - the expression as RLType, that should be represented as a String
     Returns:    String that represents the given expression.
 */
-fn print_str_rec(expression: RlType) -> String {
+pub fn print_str_rec(expression: RlType) -> String {
     // check which type the given expression has
     return match expression {
         RlType::Int(value) => format!("{}", value),

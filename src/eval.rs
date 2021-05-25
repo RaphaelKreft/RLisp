@@ -15,7 +15,7 @@ use crate::env::new_env_bound;
 use std::rc::Rc;
 
 /**
-    is the core function of the Interpreter, it takes an AST and tries to evaluate it.
+    Is the core function of the Interpreter, it takes an AST and tries to evaluate it.
     1. Check if given AST is a List
         1.1. If its a List, look what the first element of the List is
             1.1.1 If it's a special form, act accordingly(special forms have individual, non

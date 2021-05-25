@@ -29,6 +29,7 @@ pub fn new_env(outer: Option<RlEnv>) -> RlEnv {
     });
 }
 
+
 pub fn new_env_bound(
     outer: Option<RlEnv>,
     names: Vec<RlType>,

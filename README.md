@@ -95,7 +95,7 @@ Code Representation: `example`, `myfunction`, `bob`
 A String is a sequence of chars. In contrast to a symbol, a String will not be evaluated during the evaluation-process.
 It can be used to print out text or give the load function a filename.
 
-Code Representation: indicated by single quotes - `'This is a String 123'`
+Code Representation: a String is surrounded by []- `[This is a String 123]`
 
 **6. List**:
 
@@ -103,7 +103,7 @@ A List is another essential Lisp Datatype. A List consists of 0..n elements sepa
 round brackets. A List can have arbitrary elements, and an arbitrary number of elements.
 Internally a List is represented as a Rust Vector of Language Elements(RLType).
 
-Code Representation: empty list - `()`, `(1, 2, 5)`, `(1, (+ 1 2), 'Raphael')`
+Code Representation: empty list - `()`, `(1, 2, 5)`, `(1, (+ 1 2), [Raphael])`
 
 **7. Function**:
 
@@ -144,7 +144,7 @@ Are the standard List operators in LISP, The list representation  is not pairwis
 needed in an implementation in Rust:
 
 1. `cons` creates a list of the arguments given to it. Example: `(cons 1 'abc', (1,2), #f)` creates a list 
-    `(1, 'abc', (1,2), #f)`
+    `(1, [abc], (1,2), #f)`
 2. `car` returns the first element of a given list, raises an error on empty lists. Example: `(car (5,6))` -> `5`
 3. `cdr` returns the rest of the list, excluding the first element, raises an error on empty lists. \n
     Example: `(cdr (1,2,3))` -> `(2,3)`
@@ -172,6 +172,8 @@ is a specialform, that is essential for the Homoiconicity principle(In Principle
 To be able to treat Code as data the `quote` operator suppress the evaluation of its argument. 
 
 Example: Quoted: `(quote (+ 1 2))` -> `(+ 1 2)` vs. not quoted: `(+ 1 2)` -> `3`
+
+The short-form of a quote also works in RLisp (quotes start with a '): `'(+ 1 2)`
 
 **6. EVAL**:
 
@@ -237,7 +239,7 @@ It takes two arguments:
 When RLisp resolves a symbolname it looks for the name in the inner environment first and then explores the outer ones until
 the symbol is found or certain to be undefined.
 
-Example: `(let ((x 12) (y 5) (name 'Raphael')) (do (println name) (+ x y)))`
+Example: `(let ((x 12) (y 5) (name [Raphael])) (do (println name) (+ x y)))`
 
 **13. LOAD**:
 
@@ -246,7 +248,7 @@ and executes the expressions in it in sequence (internally using the `do` expres
 `println` when you want to see the results of expressions that are not the final one. The result of the final expression is
 being returned.
 
-Example: `(load 'test.txt')`
+Example: `(load [test.txt])`
 
 ### Language Elements defined in RLisp itself
 With this already pretty sweet selection of atoms RLisp is Turing-Complete and we have the opportunity to expand the

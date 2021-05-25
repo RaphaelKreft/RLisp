@@ -21,14 +21,13 @@ use crate::types::RlErr::ErrString;
     Returns:    ParserError -> return RLError, resulting Syntax Tree otherwise
 */
 pub fn read_str(string: String) -> RlReturn {
-    //println!("Got line: {}", line);
     // first tokenize the string -> list with valid RLisp tokens
     let tokens = tokenize(&string);
     // if no tokens found, return error
     if tokens.is_empty() {
         return Err(error("No valid tokens found"));
     }
-    //println!("Got tokens: {:?}", tokens);
+    println!("Got tokens: {:?}", tokens);
     // use read_from_tokens to build up Syntax-tree from tokens
     return read_from_tokens(&mut Reader::new(tokens));
 }
@@ -45,37 +44,53 @@ fn read_from_tokens(reader: &mut Reader) -> RlReturn {
     match &peeked_token[..] {
         // if token is opening bracket, we expect a list and call read_list()
         "(" => read_list(reader),
-        // if token is simple quote, we expect a String and call read_string()
-        "'" => read_string(reader),
+        // if token is double quote, we expect a String and call read_string()
+        "[" => read_string(reader),
+        // if token is simple quote ', read a quoted expression
+        "'" => read_quote(reader),
         // else we expect Atomic Elements
         _ => read_atom(reader),
     }
 }
 
 /**
-    Takes a Reader-Instance and collects a string from the token list until a closing quote is found.
+    Takes a Reader-Instance and collects a string from the token list until a closing ] is found.
 
     Arguments:  reader - the Reader Instance that holds the token list and current position in token-list
     Returns:    A RLType::String, holding the read string, If an Error occurs -> RLError
 */
 fn read_string(reader: &mut Reader) -> RlReturn {
     // create new empty String instance
-    let mut str = String::new();
+    let mut string_tokens: Vec<String> = vec![];
     // skip opening quote
     reader.next()?;
     // loop until closing quote is found
     loop {
         // return error if suddenly EOF occurs
         let token = reader.peek()?;
-        if token == "'" {
+        if token == "]" {
             // if closing quote occurs, stop adding tokens to string
             reader.next()?;
             break;
         }
         // add token to string
-        str.push_str(&reader.next()?);
+        string_tokens.push(reader.next()?);
     }
-    return Ok(RlType::String(str));
+    return Ok(RlType::String(string_tokens.join(" ")));
+}
+
+/**
+    Takes a Reader-Instance and collects a quoted expression from the token list. Therefore just
+    the first expression after the quoting symbol ' is read and wrapped by a "quote" special form.
+
+    Arguments:  reader - the Reader Instance that holds the token list and current position in token-list
+    Returns:    resulting AST of form (quote {following expression}), If an Error occurs -> RLError
+*/
+fn read_quote(reader: &mut Reader) -> RlReturn {
+    // skip quoting symbol
+    reader.next()?;
+    // pack following expression in a quote operation -> (quote {following_expression})
+    return Ok(RlType::List(vec![RlType::Symbol("quote".to_string()), read_from_tokens(reader)?]));
 }
 
 /**

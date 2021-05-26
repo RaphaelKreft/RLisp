@@ -1,0 +1,110 @@
+; This file contains a bunch of tests that should show that all basic language expressions work as expected
+; I therefore also included some programs from the homework that was given in the lecture that this interpreter is
+; part of as a project
+
+; 1. Integer arithmetics
+
+(println [-->Simple addition (+ 1 1 1 1)<--])
+(println (+ 1 1 1 1))
+
+(println [-->Simple subtraction (- 1 1 2)<--])
+(println (- 1 1 2))
+
+(println [-->Simple division (/ 10 2)<--])
+(println (/ 10 2))
+
+(println [-->Simple multiplication (* 1 2 3 4)<--])
+(println (+ 1 2 3 4))
+
+(println [-->More complex (* 2 (+ 5 (- 22 19)))<--])
+(println (* 2 (+ 5 (- 22 19))))
+
+; 2. List operations
+
+(println [-->create a list(nothing nested, just a vector internally): (list 1 2 3)<--])
+(println (list 1 2 3))
+
+(println [-->get the rest o fa list: (tail (list 1 2 3))<--])
+(println (tail (list 1 2 3)))
+
+(println [-->create a list as in Root of Lisp or scheme (nested pairs): (cons 1 (cons 2 (cons 3 ())))<--])
+(println (cons 1 (cons 2 (cons 3 ()))))
+
+(println [-->get first element of a list: (car (cons 1 2 3))<--])
+(println (car (cons 1 2 3)))
+
+(println [-->use cdr(normal case): (cdr (cons 1 2 3))<--])
+(println (cdr (cons 1 2 )))
+
+(println [-->use cdr(corner case): (cdr (1))<--])
+(println (cdr (1)))
+
+(println [-->prepend value to a list: (cons 1 (2 3))<--])
+(println (cons 1 (2 3)))
+
+(println [-->complex expression with nested list: (car (cdr (cons 1 (cons 2 (cons 3 ())))))<--])
+(println (car (cdr (cons 1 (cons 2 (cons 3 ()))))))
+
+; 3. Conditions, type-checks and equality
+
+(println [-->Simple Conditional (cond ((eq? 12 6) 1) (#t 2))<--])
+(println (cond ((eq? 12 6) 1) (#t 2)))
+
+(println [-->Typecheck list (list? (1,2,3))<--])
+(println (list? (1,2,3)))
+
+(println [-->Typecheck number (number? 12)<--])
+(println (number? 12))
+
+(println [-->Check if given expression is an atom: (atom? '12), (atom? #t), (atom? ()), (atom? (1,2,3)<--])
+(println (atom? '12))
+(println (atom? #t))
+(println (atom? ()))
+(println (atom? (1,2,3)))
+
+; 4. Environments: define
+
+(println [-->With define you can set new mappings in the environment or overwrite them! (like set!)<--])
+(println [-->Simple Variable Definitions: (define a 6)<--])
+(println (define a 6))
+
+(println [-->Now a can be used: (+ a 6)<--])
+(println (+ a 6)))
+
+(println [-->We can overwrite the variable again: (define a (* 2 (+ 3 4)))<--])
+(println (define a (* 2 (+ 3 4))))
+
+(println [-->double define(define returns value it mapped to): (define test (define a 12))<--])
+(println (define test (define a 12)))
+(println [-->Now test = a = 12<--]<--])
+
+; 5. Lambda and own functions
+
+(println [-->We can use lambda in Line(temporarily): ((lambda (x y) (+ x y)) 2 2)<--])
+(println ((lambda (x y) (+ x y)) 2 2))
+
+(println [-->We can use lambda to define own functions: (define square (lambda (x) (* x x)))<--])
+(println (define square (lambda (x) (* x x))))
+
+(println [-->We can use it now: (square 5)<--])
+(println (square 5))
+
+(println [-->We can use define & lambda to curry: (define plusx (lambda (x) ((lambda (y) (+ x y)))))<--])
+(println (define plusx (lambda (x) (lambda (y) (+ x y)))))
+
+(println [-->Now we can use this to generate functions (define plus3 (plusx 3))<--])
+(println (define plus3 (plusx 3)))
+
+(println [-->And use it: (plus3 4)<--])
+(println (plus3 4))
+
+; 6. Execute sequences with do
+
+(println [-->Execute sequences with do (val of last expr is returned): (do (define x 15) (define y (+ x 3)) (- y x))<--])
+(println (do (define x 15) (define y (+ x 3)) (- y x)))
+
+; 7. let
+
+(println [-->let creates new env with bindings, for its body: (let ((x 1) (y (+ 1 2))) (list x y (plus3 10)))<--])
+(println (let ((x 1) (y (+ 1 2))) (list x y (plus3 10))))
+

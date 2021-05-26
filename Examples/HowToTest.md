@@ -18,7 +18,7 @@ Root of Lisp Interpreter in order fo it to run on RLisp.
 
 The adapted definition of the Root of Lisp Interpreter can be found in the file: ROL_adapted.txt
 
-When you start RLisp, type the following Command to load the definition into your environment: `(load [ROL_adapted.txt])`
+When you start RLisp, type the following Command to load the definition into your environment: `(load [rol_rlisp.definition])`
 
 **Now you can proceed with the Testing:**
 

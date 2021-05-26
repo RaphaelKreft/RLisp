@@ -1,1 +1,74 @@
-; This file contains the solutions to some tasks of the famous sicp book
+; This file contains some advanced expressions taken from the Sicp book
+; define some basic functions that are used in the tasks
+
+(println [--> Defining basic procedures used in the task: id, square, inc<--])
+(define id (lambda (x) x))
+(define square (lambda (x) (* x x)))
+(define inc (lambda (x) (+ x 1)))
+
+; higher order procedure
+
+(println [-->Define High order procedure product and define factorial with it!<--])
+(define product (lambda (f a next b)
+  (cond ((> a b) 1)
+        (#t (* (f a) (product f (next a) next b))))))
+
+(define factorial (lambda (n)
+  (product ident 1 inc n)))
+
+(println [-->Now test factorial! (factorial 5)<--])
+(println (factorial 5))
+
+; double function application
+
+(println [--> Defining a procedure which applies a function twice <--])
+(define (double f) (lambda (x) (f (f x))))
+
+(println [--> Test this function with: ((double inc) 1), (((double (double double)) inc) 5) <--])
+(println ((double inc) 1))
+(println (((double (double double)) inc) 5))
+
+; Function composition
+
+(println [--> Define functions for function composition and repeated application <--])
+(define compose (lambda  (f g)
+  (lambda (x) (f (g x)))))
+
+(define repeat (lambda (func ntimes)
+  (define (repeat_iter f fres n)
+    (cond ((eq? n 1) fres)
+          (#t (repeat_iter f (compose fres f) (- n 1)))
+    )
+  )
+  (repeat_iter func func ntimes))
+)
+
+(println [--> Test these functions: ((compose square inc) 6) and ((repeat square 2) 5) <--])
+(println ((compose square inc) 6))
+(println ((repeat square 2) 5))
+
+
+; Complex list operations
+
+(println [--> Define some complex list operations reverse, map <--])
+
+(define reverse (lambda (toreverse)
+  (define rev_iter (lambda (torev result)
+    (cond ((null? torev) result)
+          (#t (rev_iter (cdr torev) (cons (car torev) result)))
+    )))
+  (rev_iter toreverse nil)))
+
+(define map (lambda (proc list1)
+  (cond ((null? list1) nil)
+        (#t (cons (proc (car list1)) (map2 proc (cdr list1))))
+)))
+
+(println [--> Test these expressions: (reverse (list 1 2 3 4)) and (map (lambda (x) (* x x)) (list 1 2 3 4)) <--])
+(println (reverse (list 1 2 3 4)))
+(println (map (lambda (x) (* x x)) (list 1 2 3 4)))
+
+(println [--> Define for-each form and test with (for-each (lambda (x)(* x x)) (list 57 321 88)) <--])
+(define for-each (lambda (body operands)
+  (map body operands)))
+(println (for-each (lambda (x)(* x x)) (list 57 321 88)))

@@ -38,7 +38,6 @@ fn self_defined_prebuild() -> Vec<String> {
         "(define caddr (lambda (x) (cadr (cdr x))))".to_string(),
         "(define cadar (lambda (x) (cadr (car x))))".to_string(),
         "(define caddar (lambda (x) (caddr (car x))))".to_string(),
-        "(load [jmc_adapted.txt])".to_string(),
     ]
 }
 

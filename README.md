@@ -135,22 +135,26 @@ For the Integer Datatype to be useful, we need Integer arithmetics! RLisp curren
 3. `*` is used to multiply 2..n numbers. Example: `(* 2 3 -4)` or `(* 1 0)`
 4. `/` is used to divide the heading number by the sum of the rest. Example: `(/ 20 2 2)` will output 5, please mention that
 dividing by 0 leads to an error and that it's a full number division rounding down.
+5. `>` is used to compare two Integers, takes exactly 2 Integers as argument and returns if arg1 > arg2 Example: `(> 2 1)`
+-> `#t`
+6. `<` is used to compare two Integers, takes exactly 2 Integers as argument and returns if arg1 < arg2 Example: `(< 2 1)`
+-> `#f`
+
 
 All operators currently need at least a number of 2 arguments.
 
-**2. CAR / CDR / CONS / LIST / TAIL**:
+**2. CAR / CDR / CONS / LIST**:
 
-To support nested pair structures (= Lists in Root of Lisp / Scheme) and normal sequential lists, RLisp has different
-functions for each case. 
+RLisp supports nested pair structures (= Lists in Root of Lisp / Scheme). Lists are represented in this form.
+So please keep in mind creating lists with `(list 1 2 3 4)` instead of `(1 2 3 4)`
 
-1. `list` creates a list of the arguments given to it. Example: `(list 1 'abc', (1,2), #f)` creates a list 
-    `(1, [abc], (1,2), #f)`
-2. `car` returns the first element of a given list, raises an error on empty lists. Example: `(car (5,6))` -> `5`
+1. `list` creates a list of the arguments given to it. Example: `(list 1 'abc' (1,2) #f)` creates a list 
+    `(1 ([abc] ((1 2) (#f ()))))`
+2. `car` returns the first element of a given list, raises an error on empty lists. Example: `(car (list 5 6))` -> `5`
 3. `cdr` returns the second element of a pair, raises an error on empty lists. \n
-    Example: `(cdr (1,2,3))` -> `(2,3)`
+    Example: `(cdr (list 1 2 3))` -> `(2 (3 ()))`
 4. `cons` takes exactly 2 arguments. The second one must be a list! cons then prepends the first argument to the list.
-    Example: `(cons 12 ())` -> `(12, ())`
-5. `tail` given a list, tail returns all elements except the first one as a list.
+    Example: `(cons 12 2)` -> `(12 (2 ()))`
     
 **3. ATOM? / LIST? / NIL? / NUMBER?**:
 
@@ -159,7 +163,7 @@ Are the type-checks included in RLisp. All type-checks have arity 1.
 1. `atom?` inspired by the operator in Root of Lisp. Returns true if argument is a Symbol, an Integer or the empty list,
     false otherwise.
 2. `list?` returns true if the argument is a list, false otherwise
-3. `nil?` returns true if the argument is nil, false otherwise
+3. `nil?` returns true if the argument is nil or the empty list, false otherwise
 4. `number?` returns true if the argument is an Integer, false otherwise
 
 **4. EQ?**:

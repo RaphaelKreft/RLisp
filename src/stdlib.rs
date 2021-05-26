@@ -18,12 +18,13 @@ pub fn core() -> Vec<(&'static str, RlType)> {
         ("car", car()),
         ("cdr", cdr()),
         ("cons", cons()),
-        ("list", list()),
-        ("tail", tail()),
+        ("list", RlType::Func(|a| Ok(list(a)))),
         ("+", integer_arithmetics("+")),
         ("-", integer_arithmetics("-")),
         ("*", integer_arithmetics("*")),
         ("/", integer_arithmetics("/")),
+        (">", integer_arithmetics(">")),
+        ("<", integer_arithmetics("<")),
         ("eq?", equals()),
         ("nil?", type_check("nil")),
         ("number?", type_check("int")),
@@ -55,8 +56,9 @@ fn type_check(typ: &str) -> RlType {
     match typ {
         // return function for nil-typecheck
         "nil" => RlType::Func(|arg| {
-            Ok(RlType::Bool(match arg[0] {
+            Ok(RlType::Bool(match &arg[0] {
                 RlType::Nil => true,
+                RlType::List(l) if l.len() == 0 => true,
                 _ => false,
             }))
         }),
@@ -114,7 +116,7 @@ fn integer_arithmetics(sym: &str) -> RlType {
         }),
         // return function for subtraction (takes a list of integers and returns value of first
         // element minus sum of the rest elements). Needs at least one parameter (with 1 arg arg is negated)
-        _ => RlType::Func(|a: Vec<RlType>| {
+        "-" => RlType::Func(|a: Vec<RlType>| {
             let x = check_int_vector(a)?;
             if x.len() < 1 {
                 return Err(error("- needs at least 1 parameter"));
@@ -123,6 +125,18 @@ fn integer_arithmetics(sym: &str) -> RlType {
             }
             let neg: i64 = x[1..].to_vec().iter().sum();
             Ok(RlType::Int(x[0] - neg))
+        }),
+        // return function, that checks if first integer is greater than the second one
+        ">" => RlType::Func(|a| {
+            let x = check_int_vector(a)?;
+            if x.len() != 2 {return Err(error("> needs exactly 2 args"));}
+            return Ok(RlType::Bool(x[0] > x[1]));
+        }),
+        // return function, that checks if first integer is smaller than the second one
+        _ => RlType::Func(|a: Vec<RlType>| {
+            let x = check_int_vector(a)?;
+            if x.len() != 2 {return Err(error("> needs exactly 2 args"));}
+            return Ok(RlType::Bool(x[0] < x[1]));
         }),
     }
 }
@@ -196,51 +210,24 @@ fn cdr() -> RlType {
 }
 
 /**
-    returns a function performing the tail operation. This function returns all elements of a given
-    list except the first one, in a new list.
-
-    Returns: The Function(Type RlType::Func) that performs tail operation
-*/
-fn tail() -> RlType {
-    /// Function that performs tail operation
-    return RlType::Func(|a| match &a[0] {
-        // check if argument given to cdr is a List
-        RlType::List(l) => {
-            // if list is empty then return error
-            return if l.len() < 2 {
-                Err(error("tail a list of min len 2"))
-            } else {
-                // else just return the list without the first element
-                Ok(RlType::List(l[1..].to_vec().clone()))
-            }
-        }
-        // if argument given to car is no list, return an Error
-        _ => Err(error("tail expects a list!")),
-    });
-}
-
-/**
     This function returns the Function(RLType::Func) that performs the "list" operation.
-    List is used to build lists from given elements. Recursively uses cons.
+    List is used to build lists from given elements. Recursively build up pair structure of cons.
 
     Returns: The Function that performs the list-operation (Type RLType::Func)
 */
-fn list() -> RlType {
-    /// Function that performs the cons operation
-    return RlType::Func(|a| {
-        // check if given list has min 1 element
-        return if a.len() < 1 {
-            Err(error("list needs min 1 argument"))
-        } else {
-            // if list has two elements, create a List/Pair and returns it
-            Ok(RlType::List(a))
-        };
-    });
+fn list(args: Vec<RlType>) -> RlType {
+    return if args.len() < 1 {
+        RlType::List(vec![])
+    } else {
+        // if list has two elements, create a List/Pair and returns it
+        RlType::List(vec![args[0].clone(), list(args[1..].to_vec().clone())])
+    }
 }
 
 /**
     This function returns the Function(RLType::Func) that performs the "cons" operation.
-    cons is used to prepend an element to a list.
+    cons is used to prepend an element to a list. If second element is not a list, create
+    following structure: (element2 (element2 ()))
 
     Returns: The Function that performs the cons-operation (Type RLType::Func)
 */
@@ -254,7 +241,7 @@ fn cons() -> RlType {
             return match &a[1] {
                 // check if second argument is a list -> must be for cons!
                 RlType::List(l) => Ok(RlType::List(vec![a[0].clone(), RlType::List(l.clone())])),
-                _ => Err(error("second arg of cons must be a list!")),
+                _ => Ok(RlType::List(vec![a[0].clone(), RlType::List(vec![a[1].clone(), RlType::List(vec![])])])),
             };
         };
     });

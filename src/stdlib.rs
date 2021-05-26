@@ -171,7 +171,6 @@ fn car() -> RlType {
     return RlType::Func(|a| match &a[0] {
         // check if given argument is a List
         RlType::List(l) => {
-            println!("{:?}", a);
             // if list is empty return Error
             return if l.len() < 1 {
                 Err(error("car needs a list of min len 1"))

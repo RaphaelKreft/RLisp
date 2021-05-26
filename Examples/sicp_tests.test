@@ -14,7 +14,7 @@
         (#t (* (f a) (product f (next a) next b))))))
 
 (define factorial (lambda (n)
-  (product ident 1 inc n)))
+  (product id 1 inc n)))
 
 (println [-->Now test factorial! (factorial 5)<--])
 (println (factorial 5))
@@ -22,7 +22,7 @@
 ; double function application
 
 (println [--> Defining a procedure which applies a function twice <--])
-(define (double f) (lambda (x) (f (f x))))
+(define double (lambda (f) (lambda (x) (f (f x)))))
 
 (println [--> Test this function with: ((double inc) 1), (((double (double double)) inc) 5) <--])
 (println ((double inc) 1))
@@ -35,15 +35,13 @@
   (lambda (x) (f (g x)))))
 
 (define repeat (lambda (func ntimes)
-  (define (repeat_iter f fres n)
+  (do (define repeat_iter (lambda (f fres n)
     (cond ((eq? n 1) fres)
           (#t (repeat_iter f (compose fres f) (- n 1)))
-    )
-  )
-  (repeat_iter func func ntimes))
-)
+    )))
+  (repeat_iter func func ntimes))))
 
-(println [--> Test these functions: ((compose square inc) 6) and ((repeat square 2) 5) <--])
+(println [--> Test these functions: ((compose square inc) 6) erg 49, and ((repeat square 2) 5) erg  <--])
 (println ((compose square inc) 6))
 (println ((repeat square 2) 5))
 
@@ -53,15 +51,15 @@
 (println [--> Define some complex list operations reverse, map <--])
 
 (define reverse (lambda (toreverse)
-  (define rev_iter (lambda (torev result)
-    (cond ((null? torev) result)
+  (do (define rev_iter (lambda (torev result)
+    (cond ((nil? torev) result)
           (#t (rev_iter (cdr torev) (cons (car torev) result)))
     )))
-  (rev_iter toreverse nil)))
+  (rev_iter toreverse ())))))
 
 (define map (lambda (proc list1)
-  (cond ((null? list1) nil)
-        (#t (cons (proc (car list1)) (map2 proc (cdr list1))))
+  (cond ((nil? list1) ())
+        (#t (cons (proc (car list1)) (map proc (cdr list1))))
 )))
 
 (println [--> Test these expressions: (reverse (list 1 2 3 4)) and (map (lambda (x) (* x x)) (list 1 2 3 4)) <--])

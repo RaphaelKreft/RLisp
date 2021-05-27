@@ -30,7 +30,7 @@ pub fn print_str_rec(expression: RlType) -> String {
     return match expression {
         RlType::Int(value) => format!("{}", value),
         RlType::Symbol(i) => format!("{}", i),
-        RlType::String(i) => format!("'{}'", i),
+        RlType::String(i) => format!("{}", i),
         // if we have list type, make recursive call to stringify elements of the list and surround
         // the elements that are separated by commas with ()-brackets
         RlType::List(vec) => {

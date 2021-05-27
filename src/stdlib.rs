@@ -175,12 +175,15 @@ fn car() -> RlType {
             return if l.len() < 1 {
                 Err(error("car needs a list of min len 1"))
             } else {
+                //println!("{:?}", l);
                 // else return first element of the list
                 Ok(l.get(0).unwrap().clone())
             }
         }
         // if argument of car is no list, return Error
-        _a => Err(error(&*format!("car expects a list! but got {:?}", _a))),
+        //_a => Err(error(&*format!("car expects a list! but got {:?}", _a))),
+        // modified to return value back for ROL
+        _a => Ok(_a.clone()),
     });
 }
 
@@ -195,12 +198,19 @@ fn cdr() -> RlType {
     return RlType::Func(|a| match &a[0] {
         // check if argument given to cdr is a List
         RlType::List(l) => {
-            // if list is empty then return error
-            return if l.len() != 2 {
+            // if list is empty
+            return if l.len() < 1 {
                 Err(error("cdr needs a list with min len 2!"))
             } else {
-                // else just return the list without the first element
-                Ok(l[1].clone())
+                if l.len() == 1 {
+                    Ok(RlType::List(vec![]))
+                }
+                else if l.len() == 2{
+                    // else just return the list without the first element
+                    Ok(l[1].clone())
+                } else {
+                    Ok(RlType::List(l[1..].to_vec().clone()))
+                }
             }
         }
         // if argument given to car is no list, return an Error
@@ -240,6 +250,7 @@ fn cons() -> RlType {
             return match &a[1] {
                 // check if second argument is a list -> must be for cons!
                 RlType::List(l) => Ok(RlType::List(vec![a[0].clone(), RlType::List(l.clone())])),
+                // if its not, pack the second element in a separate pair with tailing empty list
                 _ => Ok(RlType::List(vec![a[0].clone(), RlType::List(vec![a[1].clone(), RlType::List(vec![])])])),
             };
         };

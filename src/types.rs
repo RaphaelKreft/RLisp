@@ -55,7 +55,7 @@ pub fn is_atom(expr: RlType) -> bool {
         RlType::Nil => true,
         RlType::Bool(_i) => true,
         RlType::String(_i) => true,
-        RlType::List(l) if l.len() == 0 => true,
+        //RlType::List(l) if l.len() == 0 => true,
         _ => false,
     }
 }

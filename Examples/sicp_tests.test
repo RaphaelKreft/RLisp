@@ -1,14 +1,15 @@
 ; This file contains some advanced expressions taken from the Sicp book
 ; define some basic functions that are used in the tasks
 
-(println [--> Defining basic procedures used in the task: id, square, inc<--])
+(println [--> Defining basic procedures used in the task: id, square, inc <--])
+(println [--> Please take a look at the test-code for better understanding <--])
 (define id (lambda (x) x))
 (define square (lambda (x) (* x x)))
 (define inc (lambda (x) (+ x 1)))
 
 ; higher order procedure
 
-(println [-->Define High order procedure product and define factorial with it!<--])
+(println [--> Define High order procedure product and define factorial with it!<--])
 (define product (lambda (f a next b)
   (cond ((> a b) 1)
         (#t (* (f a) (product f (next a) next b))))))
@@ -16,7 +17,7 @@
 (define factorial (lambda (n)
   (product id 1 inc n)))
 
-(println [-->Now test factorial! (factorial 5)<--])
+(println [--> Now test factorial! (factorial 5)<--])
 (println (factorial 5))
 
 ; double function application
@@ -55,7 +56,7 @@
     (cond ((nil? torev) result)
           (#t (rev_iter (cdr torev) (cons (car torev) result)))
     )))
-  (rev_iter toreverse ())))))
+  (rev_iter toreverse ()))))
 
 (define map (lambda (proc list1)
   (cond ((nil? list1) ())

@@ -35,9 +35,12 @@ fn self_defined_prebuild() -> Vec<String> {
     vec![
         "(define caar (lambda (x) (car (car x))))".to_string(),
         "(define cadr (lambda (x) (car (cdr x))))".to_string(),
+        "(define cddr (lambda (x) (cdr (cdr x))))".to_string(),
         "(define caddr (lambda (x) (cadr (cdr x))))".to_string(),
         "(define cadar (lambda (x) (cadr (car x))))".to_string(),
         "(define caddar (lambda (x) (caddr (car x))))".to_string(),
+        "(define cddar (lambda (x) (cddr (car x))))".to_string(),
+        "(define caadar (lambda (x) (caar (cdr (car x)))))".to_string(),
     ]
 }
 

@@ -1,2 +1,63 @@
 ; This File Contains test expressions/Programs that can be executed in the RLisp Interpreter after loading
-; ROL_adapted.txt. TThe tests will show that the meta-circular Interpreter works as expected
+; rol_rlisp.definition. TThe tests will show that the meta-circular Interpreter works as expected
+
+; 1. test null. function
+
+(println [-->   Test null. : (null. ()), (null. '()), (null. 'a), (null. 123)])
+(println (null. ()))
+(println (null. '()))
+(println (null. 'a))
+(println (null. 123))
+
+; 2. test and. function
+
+(println [-->   Test and. : (and. (atom? 'a) (eq? 'a 'a)) and (and. (atom? 'a) (eq? 'a 'b))])
+(println (and. (atom? 'a) (eq? 'a 'a)))
+(println (and. (atom? 'a) (eq? 'a 'b)))
+
+; 3. test not. function
+
+(println [-->   Test not. : (not. (eq? 'a 'a)) and (not. (eq? 'a 'b))])
+(println (not. (eq? 'a 'a)))
+(println (not. (eq? 'a 'b)))
+
+; 4. test append. function
+
+(println [-->   Test append. : (append. (list 'a 'b) (list 'c 'd)) and (append. '() (list 'c 'd))])
+(println (append. (list 'a 'b) (list 'c 'd)))
+(println (append. '() (list 'c 'd)))
+
+; 5. test pair. function
+
+(println [-->   Test pair. : (pair. (list 'x 'y 'z) (list 'a 'b 'c))])
+(println (pair. (list 'x 'y 'z) (list 'a 'b 'c)))
+
+; 6. test assoc. function
+
+(println [-->   Test assoc. : (assoc. 'x (list (list 'x 'a) (list 'y 'b))) and (assoc. 'x (list (list 'x 'new) (list 'x 'a) (list 'y 'b)))])
+(println (assoc. 'x (list (list 'x 'a) (list 'y 'b))))
+(println (assoc. 'x (list (list 'x 'new) (list 'x 'a) (list 'y 'b))))
+
+; 7. Test eval. function!!!
+(println [])
+(println [--> Test eval. with different kinds of expressions:])
+
+(println [--> 1. simple symbol lookup: (eval. 'x (list (list 'x 'a) (list 'y 'b)))])
+(println (eval. 'x (list (list 'x 'a) (list 'y 'b))))
+
+(println [--> 2. atom eq: (eval. '(eq 'a 'a) '())])
+(println (eval. '(eq 'a 'a) '()))
+
+(println [--> 3. atom cons: (eval. '(cons x '(b c))
+                            (list (list 'x 'a) (list 'y 'b)))])
+(println (eval. '(cons x '(b c))
+                (list (list 'x 'a) (list 'y 'b))))
+
+(println [--> 4. atom if: (eval. '(if ((atom x) 'atom) 'list) (list (list 'x '(a b))))])
+(println (eval. '(if ((atom x) 'atom) 'list) (list (list 'x '(a b)))))
+
+(println [--> 5. function symbol resolution and lambdas: (eval. '(f '(b c)) '((f ((lambda (x) (cons 'a x)) ())) ()))])
+(println (eval. '(f '(b c)) '((f ((lambda (x) (cons 'a x)) ())) ())))
+
+(println [--> 6. labeling = define new value in environment, in this case its a function: (eval. '((label identity (lambda (x) x)) 'abc) '())])
+(eval. '((label identity (lambda (x) x)) 'abc) '())

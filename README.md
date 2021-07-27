@@ -6,6 +6,10 @@ definition of Paul grahams Root of Lisp.
 In Addition to that RLisp also has more functionality such as Integer arithmetics to make RLisp more powerful and
 convenient to use in real-life applications.
 
+## Features
+
+A special feature that will be implemented in the next weeks will be the support for non-deterministic programming.
+This programming paradigm will be implemented via an "amb driver loop" and will free the programmer from the details how decisions are made. More details will follow.
 
 ## Usage
 

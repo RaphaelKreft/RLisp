@@ -63,7 +63,7 @@ fn main() {
     if args.len() == 2 && &args[1] != "non-det" {
         // if argument was given and is not "non-det" open and operate on file input
         load(&args[1], env.clone());
-    } else if &args[1] == "non-det" {
+    } else if args.len() == 2 && &args[1] == "non-det" {
         amb_driver_loop(env.clone(), true)
 
     } else {
@@ -102,11 +102,11 @@ fn amb_driver_loop(env: RlEnv, cont: bool) {
 }
 
 fn internal_loop <F: Fn()>(mut rl: rustyline::Editor<()>, env: RlEnv, try_again: F){
-    let input = rl.readline("(ambeval) user>");
+    let input = rl.readline("(ambeval) user> ");
     match input {
         Ok(line) => {
             // for user to quit evaluator
-            if line == "quit" {
+            if line == "exit" {
                 amb_driver_loop(env.clone(),false);
             // for user to try-again, just loops when there is no problem
             } else if line == "try-again" {

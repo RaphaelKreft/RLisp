@@ -19,6 +19,10 @@ use crate::env::RlEnv;
 use eval::eval;
 use std::fs;
 use types::{RlErr, RlReturn, RlType};
+use std::error::Error;
+
+// standard library imports
+
 
 #[macro_use]
 extern crate lazy_static;
@@ -56,10 +60,12 @@ fn main() {
     for definition in self_defined_prebuild().iter() {
         rep_wrapper(definition, env.clone(), false);
     }
-
-    if args.len() == 2 {
-        // if argument was given open and operate on file input
+    if args.len() == 2 && &args[1] != "non-det" {
+        // if argument was given and is not "non-det" open and operate on file input
         load(&args[1], env.clone());
+    } else if &args[1] == "non-det" {
+        amb_driver_loop(env.clone(), true)
+
     } else {
         // else operate in cmd mode -> REPL
         let mut rl = rustyline::Editor::<()>::new();
@@ -80,6 +86,54 @@ fn main() {
                 // There was no valid input -> Give information and repeat the loop
                 Err(_) => println!("No input"),
             }
+        }
+    }
+}
+
+fn amb_driver_loop(env: RlEnv, cont: bool) {
+    let rl = rustyline::Editor::<()>::new();
+    if cont {
+        let loop_func = || {
+            println!("No current problem!");
+            amb_driver_loop(env.clone(), true);
+        };
+        internal_loop(rl, env.clone(), loop_func)
+    }
+}
+
+fn internal_loop <F: Fn()>(mut rl: rustyline::Editor<()>, env: RlEnv, try_again: F){
+    let input = rl.readline("(ambeval) user>");
+    match input {
+        Ok(line) => {
+            // for user to quit evaluator
+            if line == "quit" {
+                amb_driver_loop(env.clone(),false);
+            // for user to try-again, just loops when there is no problem
+            } else if line == "try-again" {
+                try_again();
+            } else {
+                println!("Starting new problem");
+                //next alternative is a procedure, change bool when we know which type
+                let root_succ = |value: RlType, next_alternative: bool| {
+                    println!("Possible Solution: ");
+                    println!("{}", PRINT(value));
+                    //internal_loop(rl, env.clone(), next_alternative)
+                };
+                let root_fail = || {
+                    println!("There are noo more values left");
+                    amb_driver_loop(env.clone(), true);
+                };
+                //new amb_rep_wrapper?
+                //where we also pass the succes and failure continuations
+                // then we shouldn't need the call to internal_loop below anymore
+                // and internal loop above can be uncommented
+                rep_wrapper(&line, env.clone(),true);
+                internal_loop(rl, env.clone(), try_again)
+            }
+        }
+        Err(_) => {
+            println!("No input");
+            internal_loop(rl, env.clone(), try_again);
         }
     }
 }

@@ -8,6 +8,7 @@ Use without Commandline-Argument: Read-Eval-Print Loop is executed , User can in
 // hook in submodules (Defines module-structure)
 mod env;
 mod eval;
+mod amb_eval;
 mod printer;
 mod reader;
 mod stdlib;
@@ -17,6 +18,7 @@ pub mod utils;
 // load important functionality from submodules
 use crate::env::RlEnv;
 use eval::eval;
+use amb_eval::amb_eval;
 use std::fs;
 use types::{RlErr, RlReturn, RlType};
 use std::error::Error;
@@ -60,12 +62,12 @@ fn main() {
     for definition in self_defined_prebuild().iter() {
         rep_wrapper(definition, env.clone(), false);
     }
+    // Operate on given arguments
     if args.len() == 2 && &args[1] != "non-det" {
         // if argument was given and is not "non-det" open and operate on file input
         load(&args[1], env.clone());
     } else if args.len() == 2 && &args[1] == "non-det" {
         amb_driver_loop(env.clone(), true)
-
     } else {
         // else operate in cmd mode -> REPL
         let mut rl = rustyline::Editor::<()>::new();
@@ -89,16 +91,20 @@ fn main() {
         }
     }
 }
+// TODO: Check if loop can be  changed so that also files can be evaluated with non-det Rlisp
+/**
+The amb_driver_loop is the loop that is used to evaluate non-deterministic RLisp.
+In the current version it must be called explicitly by given appropriate arg to the executable.
 
-fn amb_driver_loop(env: RlEnv, cont: bool) {
+@args:  env  - the environment the expression is evaluated in
+**/
+fn amb_driver_loop(env: RlEnv) {
     let rl = rustyline::Editor::<()>::new();
-    if cont {
-        let loop_func = || {
-            println!("No current problem!");
-            amb_driver_loop(env.clone(), true);
-        };
-        internal_loop(rl, env.clone(), loop_func)
-    }
+    let loop_func = || {
+        println!("No current problem!");
+        amb_driver_loop(env.clone());
+    };
+    internal_loop(rl, env.clone(), loop_func)
 }
 
 fn internal_loop <F: Fn()>(mut rl: rustyline::Editor<()>, env: RlEnv, try_again: F){
@@ -107,7 +113,7 @@ fn internal_loop <F: Fn()>(mut rl: rustyline::Editor<()>, env: RlEnv, try_again:
         Ok(line) => {
             // for user to quit evaluator
             if line == "exit" {
-                amb_driver_loop(env.clone(),false);
+                return;
             // for user to try-again, just loops when there is no problem
             } else if line == "try-again" {
                 try_again();
@@ -120,7 +126,7 @@ fn internal_loop <F: Fn()>(mut rl: rustyline::Editor<()>, env: RlEnv, try_again:
                     //internal_loop(rl, env.clone(), next_alternative)
                 };
                 let root_fail = || {
-                    println!("There are noo more values left");
+                    println!("There are no more values left!");
                     amb_driver_loop(env.clone(), true);
                 };
                 //new amb_rep_wrapper?

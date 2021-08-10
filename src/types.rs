@@ -30,6 +30,7 @@ pub enum RlType {
         params: Rc<Vec<RlType>>,
         body: Rc<RlType>,
     },
+    AnalyzeExp(Box<dyn Fn(RlEnv, dyn Fn(RlType, dyn Fn()), dyn Fn())>),
     List(Vec<RlType>),
     Nil,
 }

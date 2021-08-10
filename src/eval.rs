@@ -141,7 +141,7 @@ pub fn eval(expression: RlType, environment: RlEnv) -> RlReturn {
                             _ => return Err(error("load a string as argument!")),
                         };
                         // use load() in main.rs to process file
-                        super::load(filename, environment.clone());
+                        super::load(filename, environment.clone(), false);
                         // return nil since something needs to be returned
                         Ok(RlType::Nil)
                     }

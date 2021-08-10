@@ -8,23 +8,24 @@ Use without Commandline-Argument: Read-Eval-Print Loop is executed , User can in
 // hook in submodules (Defines module-structure)
 mod env;
 mod eval;
-mod amb_eval;
 mod printer;
 mod reader;
 mod stdlib;
 pub mod types;
 pub mod utils;
+pub mod choices;
 
 // load important functionality from submodules
 use crate::env::RlEnv;
 use eval::eval;
 use amb_eval::amb_eval;
-use std::fs;
 use types::{RlErr, RlReturn, RlType};
-use std::error::Error;
+use utils::{read_file_string};
 
 // standard library imports
+use std::error::Error;
 use structopt::StructOpt;
+use crate::types::error;
 
 #[macro_use]
 extern crate lazy_static;
@@ -52,8 +53,8 @@ fn self_defined_prebuild() -> Vec<String> {
 #[derive(StructOpt)]
 struct Cli {
     /// Flag to tell if non-deterministic evaluator should be used
-    #[structopt(short = "n", long = "non-det", default_value = False, about = "if this flag is given, the non deterministic evaluator is used")]
-    non_det: bool,
+    #[structopt(short = "d", long = "debug", default_value = False, about = "flag that enables debug prints")]
+    debug: bool,
     /// The path to the file to read (optional)
     #[structopt(parse(from_os_str), about = "if this argument is given, the interpreter tries to load from the given path")]
     path: Option<std::path::PathBuf>,
@@ -73,22 +74,18 @@ fn main() {
     }
     // Operate on given arguments
     match &args.path {
-        Some(t) => load(t, env.clone(), args.non_det),
+        Some(t) => { load(t, env) }
         _ => {
-            // else operate in cmd mode -> REPL
-            let mut rl = rustyline::Editor::<()>::new();
-            if !args.non_det {
-                normal_loop(rl, enc.clone());
-            } else {
-                amb_driver_loop(rl,env.clone());
-            }
+            // run normal repl loop
+            normal_loop(env.clone());
         }
     }
 }
 
-fn normal_loop(mut reader: rustyline::Editor<()>, env: RlEnv) {
+fn normal_loop(env: RlEnv) {
     loop {
         // use extern crate rustyline, to get userinput
+        let mut reader = rustyline::Editor::<()>::new();
         let input = reader.readline("user> ");
         // check if there was a valid input
         match input {
@@ -103,52 +100,6 @@ fn normal_loop(mut reader: rustyline::Editor<()>, env: RlEnv) {
             }
             // There was no valid input -> Give information and repeat the loop
             Err(_) => println!("No input"),
-        }
-    }
-}
-
-/**
-The amb_driver_loop is the loop that is used to evaluate non-deterministic RLisp.
-In the current version it must be called explicitly by given appropriate arg to the executable.
-
-Arguments:  env  - the environment the expression is evaluated in
- **/
-fn amb_driver_loop(mut reader: rustyline::Editor<()>, env: RlEnv) {
-    let loop_func = || {
-        println!("No current problem!");
-        amb_driver_loop(reader.clone(),env.clone());
-    };
-    non_det_loop(reader.clone(), env.clone(), loop_func)
-}
-
-fn non_det_loop<F: Fn()>(mut rl: rustyline::Editor<()>, env: RlEnv, try_again: F) {
-    let input = rl.readline("(ambeval) user> ");
-    match input {
-        Ok(line) => {
-            // for user to quit evaluator
-            if line == "exit" {
-                return;
-                // for user to try-again, just loops when there is no problem
-            } else if line == "try-again" {
-                try_again();
-            } else {
-                println!("Starting new problem");
-                //next alternative is a procedure, change bool when we know which type
-                let root_succ = |value: RlType, next_alternative: bool| {
-                    println!("Possible Solution: ");
-                    println!("{}", PRINT(value));
-                    //internal_loop(rl, env.clone(), next_alternative)
-                };
-                let root_fail = || {
-                    println!("There are no more values left!");
-                    amb_driver_loop(rl.clone(),env.clone());
-                };
-                amb_eval(READ(&line)?, env);
-            }
-        }
-        Err(_) => {
-            println!("No input");
-            non_det_loop(rl, env.clone(), try_again);
         }
     }
 }
@@ -170,6 +121,8 @@ and returns the result of the Evaluator.
 
 Arguments:  expression - the AST(type RLType) that should be evaluated
             env - the environment that the evaluator should work with
+            non_det - flag whether normal or non-det evaluator should be used
+            success/fail - root-continuations that need to be passed when non_det is true
 Returns:    of type RlReturn, so either the result or an (Evaluation)Error
  */
 fn EVAL(expression: RlType, env: RlEnv) -> RlReturn {
@@ -211,7 +164,7 @@ Returns:    -
 fn rep_wrapper(to_rep: &String, env: RlEnv, print_flag: bool) {
     // if there was an input
     if to_rep.len() > 0 {
-        // call rep to process input, then check if there was
+        // if want to wrap non-det program, call amb_rep
         match rep(&to_rep, env) {
             Ok(res) => {
                 if print_flag {
@@ -228,16 +181,6 @@ fn rep_wrapper(to_rep: &String, env: RlEnv, print_flag: bool) {
 }
 
 /**
-Takes a filename and reads the content as String, if an error occurs, NIL is returned
-
-Arguments:  filename - the name of the file to read as String
-Returns:    file-content as String
- */
-fn read_file_string(filename: String) -> String {
-    return fs::read_to_string(filename).expect("#nil");
-}
-
-/**
 Takes a filename and an environment uses read_file_string to read string from file, then
 surrounds this string with a (do ) expression -> This is so that all expressions in the
 file are executed even if there are multiple independent ones on multiple lines
@@ -246,14 +189,9 @@ file are executed even if there are multiple independent ones on multiple lines
 Arguments:  filename - name of file to read from
             env - the environment, the loaded expressions should be evaluated in
  */
-fn load(filename: &String, env: RlEnv, non_det: bool) {
+fn load(filename: &String, env: RlEnv) {
     // load file string and pack into do expression
     let file_string = read_file_string(filename.to_string());
-    let to_execute = format!("(do {})", file_string);
-    // execute prepared expression
-    if non_det {
-        // TODO: implement file read for non-det -> break out core func of amb-drivers
-    } else {
-        rep_wrapper(&to_execute, env, true);
-    }
+    // process read expression which is before packed into a (do ) expression
+    rep_wrapper(&format!("(do {})", file_string), env, true);
 }

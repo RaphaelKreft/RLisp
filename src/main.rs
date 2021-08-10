@@ -26,6 +26,7 @@ use utils::{read_file_string};
 use std::error::Error;
 use structopt::StructOpt;
 use crate::types::error;
+use crate::choices::{Choices, RlChoices};
 
 #[macro_use]
 extern crate lazy_static;
@@ -47,6 +48,9 @@ fn self_defined_prebuild() -> Vec<String> {
         "(define caddar (lambda (x) (caddr (car x))))".to_string(),
         "(define cddar (lambda (x) (cddr (car x))))".to_string(),
         "(define caadar (lambda (x) (caar (cdr (car x)))))".to_string(),
+        // convenience defs for non-det evaluation (for the use of it)
+        "(define require (lambda (conditional) (cond (conditional #t) (#t (amb)))))".to_string(),
+        "(define try-again (lambda () (amb)))".to_string(),
     ]
 }
 
@@ -68,21 +72,23 @@ fn main() {
     let args = Cli::from_args();
     // create a new global environment (stdlib already loaded)
     let env = env::init_global();
+    // create new global choices structure (used for non-det pattern)
+    let choices = Choices::new_choices(vec![], None);
     // execute/evaluate self defined RLisp expressions
     for definition in self_defined_prebuild().iter() {
-        rep_wrapper(definition, env.clone(), false);
+        rep_wrapper(definition, env.clone(), choices.clone(),false);
     }
     // Operate on given arguments
     match &args.path {
-        Some(t) => { load(t, env) }
+        Some(t) => { load(t, env, choices.clone()) }
         _ => {
             // run normal repl loop
-            normal_loop(env.clone());
+            normal_loop(env.clone(), choices.clone());
         }
     }
 }
 
-fn normal_loop(env: RlEnv) {
+fn normal_loop(env: RlEnv, choices: RlChoices) {
     loop {
         // use extern crate rustyline, to get userinput
         let mut reader = rustyline::Editor::<()>::new();
@@ -96,7 +102,7 @@ fn normal_loop(env: RlEnv) {
                     break;
                 }
                 // if command != exit, call the rep-wrapper with the global environment
-                rep_wrapper(&line, env.clone(), true);
+                rep_wrapper(&line, env.clone(), choices.clone(),true);
             }
             // There was no valid input -> Give information and repeat the loop
             Err(_) => println!("No input"),
@@ -125,8 +131,8 @@ Arguments:  expression - the AST(type RLType) that should be evaluated
             success/fail - root-continuations that need to be passed when non_det is true
 Returns:    of type RlReturn, so either the result or an (Evaluation)Error
  */
-fn EVAL(expression: RlType, env: RlEnv) -> RlReturn {
-    return eval(expression, env);
+fn EVAL(expression: RlType, env: RlEnv, choices: RlChoices) -> RlReturn {
+    return eval(expression, env, choices);
 }
 
 /**
@@ -146,8 +152,8 @@ Arguments:   to_process - an input string that should be interpreted
              env - the environment the expression/input string is evaluated in
 Returns:     Error? -> object with type RLError is returned, otherwise the result sting
  */
-fn rep(to_process: &String, env: RlEnv) -> Result<String, RlErr> {
-    return Ok(PRINT(EVAL(READ(to_process)?, env)?));
+fn rep(to_process: &String, env: RlEnv, choices: RlChoices) -> Result<String, RlErr> {
+    return Ok(PRINT(EVAL(READ(to_process)?, env, choices)?));
 }
 
 /**
@@ -161,7 +167,7 @@ Arguments:  to_rep - the string to process
 
 Returns:    -
  */
-fn rep_wrapper(to_rep: &String, env: RlEnv, print_flag: bool) {
+fn rep_wrapper(to_rep: &String, env: RlEnv, choices: RlChoices ,print_flag: bool) {
     // if there was an input
     if to_rep.len() > 0 {
         // if want to wrap non-det program, call amb_rep
@@ -189,9 +195,9 @@ file are executed even if there are multiple independent ones on multiple lines
 Arguments:  filename - name of file to read from
             env - the environment, the loaded expressions should be evaluated in
  */
-fn load(filename: &String, env: RlEnv) {
+fn load(filename: &String, env: RlEnv, choices: RlChoices) {
     // load file string and pack into do expression
     let file_string = read_file_string(filename.to_string());
     // process read expression which is before packed into a (do ) expression
-    rep_wrapper(&format!("(do {})", file_string), env, true);
+    rep_wrapper(&format!("(do {})", file_string), env, choices.clone(),true);
 }

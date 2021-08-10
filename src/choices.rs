@@ -26,11 +26,11 @@ impl Choices {
     /**
     Static Method to create a new RlChoices Instance
      */
-    pub fn new_choices() -> RlChoices {
+    pub fn new_choices(new_choices: Vec<RlType>, outer_choices: Option<RlChoices>) -> RlChoices {
         return Rc::new(Choices{
-            choices: vec![],
+            choices: new_choices,
             index: 0,
-            outer: None
+            outer: outer_choices
         });
     }
 

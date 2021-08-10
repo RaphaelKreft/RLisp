@@ -13,6 +13,7 @@ use crate::env::new_env_bound;
 
 // load needed Rust modules
 use std::rc::Rc;
+use crate::choices::{RlChoices, Choices};
 
 /**
     Is the core function of the Interpreter, it takes an AST and tries to evaluate it.
@@ -32,7 +33,7 @@ use std::rc::Rc;
                 environment - the environment the expression is evaluated in
     Returns:    of type RlReturn - in case of an Error, is RLError otherwise the resulting AST (result of the whole evaluation)
 */
-pub fn eval(expression: RlType, environment: RlEnv) -> RlReturn {
+pub fn eval(expression: RlType, environment: RlEnv, mut choices: RlChoices) -> RlReturn {
     match expression.clone() {
         // If given expression is a List
         RlType::List(content) => {
@@ -47,7 +48,7 @@ pub fn eval(expression: RlType, environment: RlEnv) -> RlReturn {
                     RlType::Symbol(s) if s == "quote" => Ok(content[1].clone()),
                     // eval special form: takes exactly one argument and evaluates is (needed for Homoiconicity)
                     RlType::Symbol(s) if s == "eval" => {
-                        eval(content[1].clone(), environment.clone())
+                        eval(content[1].clone(), environment.clone(), choices)
                     }
                     // cond special form: takes a list of pairs. Each pair has a predicate and an according
                     //                    expression. Predicates are evaluated in order and the expression for
@@ -59,9 +60,9 @@ pub fn eval(expression: RlType, environment: RlEnv) -> RlReturn {
                             match pair {
                                 // if we have valid pair evaluate predicate
                                 RlType::List(l) if l.len() == 2 => {
-                                    match eval(l[0].clone(), environment.clone())? {
+                                    match eval(l[0].clone(), environment.clone(), choices.clone())? {
                                         RlType::Bool(true) => {
-                                            return eval(l[1].clone(), environment.clone());
+                                            return eval(l[1].clone(), environment.clone(), choices.clone());
                                         }
                                         _ => {
                                             continue;
@@ -86,7 +87,7 @@ pub fn eval(expression: RlType, environment: RlEnv) -> RlReturn {
                                 RlType::Symbol(s) => s.to_string(),
                                 _ => return Err(error("first arg of define must be a symbol")),
                             };
-                            let target = eval(content[2].clone(), environment.clone())?;
+                            let target = eval(content[2].clone(), environment.clone(), choices.clone())?;
                             set(&environment, key.clone(), target.clone());
                             Ok(target)
                         }
@@ -121,10 +122,10 @@ pub fn eval(expression: RlType, environment: RlEnv) -> RlReturn {
                                     _ => return Err(error("first arg of define must be a symbol")),
                                 };
                                 // map symbol to evaluated value in the new environment
-                                set(&new_env, key, eval(b[1].clone(), new_env.clone())?);
+                                set(&new_env, key, eval(b[1].clone(), new_env.clone(), choices.clone())?);
                             }
                             // Evaluate body with new environment
-                            eval(content[2].clone(), new_env.clone())
+                            eval(content[2].clone(), new_env.clone(), choices.clone())
                         };
                     }
                     // load special form: takes exactly one argument which is a string. This string
@@ -150,12 +151,12 @@ pub fn eval(expression: RlType, environment: RlEnv) -> RlReturn {
                     RlType::Symbol(s) if s == "do" => {
                         // evaluate every expression except the last one
                         for expression in content[1..content.len() - 1].iter() {
-                            let _ = eval(expression.clone(), environment.clone());
+                            let _ = eval(expression.clone(), environment.clone(), choices.clone());
                         }
                         // evaluate last expression and return its value
                         return eval(
                             content.last().unwrap_or(&RlType::Nil).clone(),
-                            environment.clone(),
+                            environment.clone(), choices.clone()
                         );
                     }
                     // lambda special form: takes two arguments, a list of formal arguments and an expression
@@ -175,11 +176,23 @@ pub fn eval(expression: RlType, environment: RlEnv) -> RlReturn {
                             _ => Err(error("Error: lambda takes a list of parameters and an s-expression as body!"))
                         }
                     }
+                    RlType::Symbol(s) if s == "amb" => {
+                        // amb special form: first check if parameters were given if yes start new
+                        // choices tree if not call next choice execution
+                        if content.len() == 1 {
+                            // call next choice execution
+                            choices.next_choice()
+                        } else {
+                            // else start new choices tree TODO. maybe other structure to support nested ambs etc -> This is just a first approach
+                            let given_choices = content[1..].to_vec();
+                            choices = Choices::new_choices(given_choices, Option::from(choices.clone()))
+                        }
+                    }
                     _ => {
                         // Else evaluate every subexpression of the list and apply
                         let mut evaluated = Vec::new();
                         for element in content.iter() {
-                            evaluated.push(eval(element.clone(), environment.clone())?);
+                            evaluated.push(eval(element.clone(), environment.clone(), choices.clone())?);
                         }
                         apply(evaluated)
                     }
@@ -219,7 +232,7 @@ pub fn apply(args: Vec<RlType>) -> RlReturn {
             let function_environment =
                 new_env_bound(Some(stored_env.clone()), params.clone(), args[1..].to_vec())?;
             // then evaluate function body with new environment
-            eval(body.clone(), function_environment.clone())
+            eval(body.clone(), function_environment.clone(), choices.clone())
         }
         _ => Err(error("Expected Function to apply!")),
     }

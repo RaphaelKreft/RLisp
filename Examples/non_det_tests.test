@@ -16,7 +16,9 @@
 
 (define (divides? a b) (eq? (% b a) 0))
 
-
+(define (an-element-of items)
+    (require (not (null? items)))
+    (amb (car items) (an-element-of (cdr items))))
 
 (println [-->sum-prime-pair (prime-sum-pair (list 1 3 5 8) (list 20 35 110))<--])
 (prime-sum-pair (list 1 3 5 8) (list 20 35 110))

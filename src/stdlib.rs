@@ -286,8 +286,10 @@ fn equals() -> RlType {
  */
 fn modulo() -> RlType {
     return RlType::Func(|a| {
+        // check if parameters are of type RlType::Int
+        let x = check_int_vector(a)?;
         // check if % has been given exactly 2 arguments
-        return if a.len() != 2 {
+        return if x.len() != 2 {
             // return Error if number of arguments is incorrect
             Err(error("% takes exxactly 2 args"))
         } else {

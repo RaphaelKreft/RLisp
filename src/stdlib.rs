@@ -26,6 +26,7 @@ pub fn core() -> Vec<(&'static str, RlType)> {
         (">", integer_arithmetics(">")),
         ("<", integer_arithmetics("<")),
         ("eq?", equals()),
+        ("%", modulo()),
         ("nil?", type_check("nil")),
         ("number?", type_check("int")),
         ("list?", type_check("list")),
@@ -275,4 +276,23 @@ fn equals() -> RlType {
             Ok(RlType::Bool(a[0] == a[1]))
         };
     });
+}
+
+/*
+    This function returns the Function(RlTyype::Func) that perfoms the "%" (modulus) operation.
+    % returns the remainder
+
+    Returns: The Function that perfoms the %(-operation (Type RlType::Func)
+ */
+fn modulo() -> RlType {
+    return RlType::Func(|a| {
+        // check if % has been given exactly 2 arguments
+        return if a.len() != 2 {
+            // return Error if number of arguments is incorrect
+            Err(error("% takes exxactly 2 args"))
+        } else {
+            // if 2 arguments given, compute modulus
+            Ok(RlType::Int(a[0].clone() % a[1].clone()))
+        }
+    })
 }

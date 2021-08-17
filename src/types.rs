@@ -5,7 +5,7 @@ types.rs: Holds the types of the Abstract-Syntax-Tree(AST) named RlType, the par
 
 // load needed sibling-modules
 use crate::env::RlEnv;
-use crate::types::RlErr::ErrString;
+use crate::types::RlErr::{ErrString, ChoicesErr};
 
 // load needed Rust-Functionality
 use std::fmt;
@@ -40,6 +40,7 @@ pub enum RlType {
 pub enum RlErr {
     // Defines Error-type String
     ErrString(String),
+    ChoicesErr(String),
 }
 
 /**
@@ -66,6 +67,7 @@ impl fmt::Display for RlErr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             ErrString(i) => write!(f, "{}", i),
+            ChoicesErr(i) => write!(f, "{}", i),
         }
     }
 }

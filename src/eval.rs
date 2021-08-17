@@ -8,12 +8,42 @@ to be called to evaluate an expression.
 
 // load important functionality of other sibling-modules
 use super::env::{new_env, search, set, RlEnv};
-use super::types::{error, RlReturn, RlType};
+use super::types::{error, RlReturn, RlType, RlErr};
 use crate::env::new_env_bound;
 
 // load needed Rust modules
 use std::rc::Rc;
 use crate::choices::{RlChoices, Choices};
+
+/**
+    This Method is a wrapper for eval. It looks if there is an amb in the evaluation to evaluate.
+    If yes, then a new amb-problem is started. It also looks for coming fail (from require etc),
+    and triggers reevaluation of the whole expression with the next choice.
+    To do this it stores the whole expression and environment to be able to reset.
+
+    TODO: How to treat try-again calls (code need to be stored on higher level if it should be able to call try again in separate expression)
+*/
+pub fn amb_eval(expression: RlType, environment: RlEnv, mut choices: RlChoices) -> RlReturn {
+    let whole_expression = expression.copy();
+    let env_snapshot = environment.copy();
+    // evaluate for first time
+    match eval(whole_expression, env_snapshot, choices) {
+        // if computation successful just return value -> If no amb or amb and no new choice needed
+        Ok(value) => return Ok(value),
+        // Error could be normal error or ChoicesError (fail call from amb)
+        Err(err) => {
+            match err {
+                // if it was a choices error, try to select new path (comb of choices) and reevaluate
+                RlErr::ChoicesErr(str) => {
+                    choices.next_choice()?
+                    // TODO: reevaluate
+                },
+                // if normal error just pass normal error up
+                _ => return Err(err),
+            }
+        },
+    }
+}
 
 /**
     Is the core function of the Interpreter, it takes an AST and tries to evaluate it.
@@ -142,7 +172,7 @@ pub fn eval(expression: RlType, environment: RlEnv, mut choices: RlChoices) -> R
                             _ => return Err(error("load a string as argument!")),
                         };
                         // use load() in main.rs to process file
-                        super::load(filename, environment.clone(), false);
+                        super::load(filename, environment.clone(), choices.clone());
                         // return nil since something needs to be returned
                         Ok(RlType::Nil)
                     }
@@ -183,7 +213,7 @@ pub fn eval(expression: RlType, environment: RlEnv, mut choices: RlChoices) -> R
                             // call next choice execution
                             choices.next_choice()
                         } else {
-                            // else start new choices tree TODO. maybe other structure to support nested ambs etc -> This is just a first approach
+                            // else start new choices tree
                             let given_choices = content[1..].to_vec();
                             choices = Choices::new_choices(given_choices, Option::from(choices.clone()))
                         }

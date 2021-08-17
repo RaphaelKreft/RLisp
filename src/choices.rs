@@ -19,6 +19,7 @@ pub struct Choices {
     choices: Vec<RlType>,
     index: usize,
     outer: Option<RlChoices>,
+    depth: usize,
 }
 
 
@@ -30,7 +31,8 @@ impl Choices {
         return Rc::new(Choices{
             choices: new_choices,
             index: 0,
-            outer: outer_choices
+            outer: outer_choices,
+            depth: outer_choices.depth.clone() + 1,
         });
     }
 
@@ -50,6 +52,13 @@ impl Choices {
     */
     pub fn choices_left(&self) -> bool {
         return self.index + 1 < self.choices.len();
+    }
+
+    /**
+    resets the index of the choicepoint. This enables nested search.
+    */
+    pub fn reset(&mut self) {
+        self.index = 0;
     }
 }
 

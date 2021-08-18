@@ -106,3 +106,5 @@ impl PartialEq for RlType {
 pub fn error(str: &str) -> RlErr {
     return ErrString(String::from(str));
 }
+
+pub fn choice_error(str: &str) -> RlErr { return ChoicesErr(String::from(str))}

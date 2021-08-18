@@ -62,10 +62,10 @@ impl ChoicesManager {
     /**
     This method creates a new choice point and returns the first choice of the new choice point
      */
-    fn append_choice_point(&mut self, &mut choices: Vec<RlType>) -> RlReturn {
+    fn append_choice_point(&mut self, choices: Vec<RlType>) -> RlReturn {
         self.choice_points.push(Choices::new_choices(choices));
         self.total_depth += 1;
-        choices.current_choice()
+        self.choice_points[self.choice_points.len() - 1].current_choice()
     }
 
     /**
@@ -93,7 +93,7 @@ impl ChoicesManager {
     /**
     This method returns the the next choice of the current choice point
      */
-    pub fn get_choice(&mut self, &mut choices: Vec<RlType>) -> RlReturn {
+    pub fn get_choice(&mut self, choices: Vec<RlType>) -> RlReturn {
         if self.new_choice_point() {
             self.current_depth += 1;
             self.append_choice_point(choices)
@@ -133,14 +133,14 @@ impl Choices {
         self.index += 1;
         return match self.choices.get(self.index) {
             Some(choice) => Ok(choice.clone()),
-            None => choice_error("No choices left for Choices object!"),
+            None => Err(choice_error("No choices left for Choices object!")),
         }
     }
 
     pub fn current_choice(&mut self) -> RlReturn {
         return match self.choices.get(self.index) {
             Some(choice) => Ok(choice.clone()),
-            None => choice_error("No choices left for Choices object!")
+            None => Err(choice_error("No choices left for Choices object!"))
         }
     }
 

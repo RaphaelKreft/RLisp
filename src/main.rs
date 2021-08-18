@@ -18,7 +18,6 @@ pub mod choices;
 // load important functionality from submodules
 use crate::env::RlEnv;
 use eval::eval;
-use amb_eval::amb_eval;
 use types::{RlErr, RlReturn, RlType};
 use utils::{read_file_string};
 

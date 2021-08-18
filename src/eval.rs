@@ -13,7 +13,7 @@ use crate::env::new_env_bound;
 
 // load needed Rust modules
 use std::rc::Rc;
-use crate::choices::{RlChoices, Choices};
+use crate::choices::{RlChoices, Choices, RlChoicesManager};
 
 /**
     This Method is a wrapper for eval. It looks if there is an amb in the evaluation to evaluate.
@@ -23,11 +23,11 @@ use crate::choices::{RlChoices, Choices};
 
     TODO: How to treat try-again calls (code need to be stored on higher level if it should be able to call try again in separate expression)
 */
-pub fn amb_eval(expression: RlType, environment: RlEnv, mut choices: RlChoices) -> RlReturn {
+pub fn amb_eval(expression: RlType, environment: RlEnv, mut choices_manager: RlChoicesManager) -> RlReturn {
     let whole_expression = expression.copy();
     let env_snapshot = environment.copy();
     // evaluate for first time
-    match eval(whole_expression, env_snapshot, choices) {
+    match eval(whole_expression, env_snapshot, choices_manager) {
         // if computation successful just return value -> If no amb or amb and no new choice needed
         Ok(value) => return Ok(value),
         // Error could be normal error or ChoicesError (fail call from amb)
@@ -63,7 +63,7 @@ pub fn amb_eval(expression: RlType, environment: RlEnv, mut choices: RlChoices) 
                 environment - the environment the expression is evaluated in
     Returns:    of type RlReturn - in case of an Error, is RLError otherwise the resulting AST (result of the whole evaluation)
 */
-pub fn eval(expression: RlType, environment: RlEnv, mut choices: RlChoices) -> RlReturn {
+pub fn eval(expression: RlType, environment: RlEnv, mut choices_manager: RlChoicesManager) -> RlReturn {
     match expression.clone() {
         // If given expression is a List
         RlType::List(content) => {
@@ -211,11 +211,9 @@ pub fn eval(expression: RlType, environment: RlEnv, mut choices: RlChoices) -> R
                         // choices tree if not call next choice execution
                         if content.len() == 1 {
                             // call next choice execution
-                            choices.next_choice()
+                            choices_manager.get_choice(vec![])
                         } else {
-                            // else start new choices tree
-                            let given_choices = content[1..].to_vec();
-                            choices = Choices::new_choices(given_choices, Option::from(choices.clone()))
+                            choices_manager.get_choice(content[1..].to_vec())
                         }
                     }
                     _ => {

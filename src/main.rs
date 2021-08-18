@@ -26,7 +26,7 @@ use utils::{read_file_string};
 use std::error::Error;
 use structopt::StructOpt;
 use crate::types::error;
-use crate::choices::{Choices, RlChoices};
+use crate::choices::{Choices, RlChoices, ChoicesManager, RlChoicesManager};
 
 #[macro_use]
 extern crate lazy_static;
@@ -73,22 +73,22 @@ fn main() {
     // create a new global environment (stdlib already loaded)
     let env = env::init_global();
     // create new global choices structure (used for non-det pattern)
-    let choices = Choices::new_choices(vec![], None);
+    let choices_manager = ChoicesManager::new_choices_manager();
     // execute/evaluate self defined RLisp expressions
     for definition in self_defined_prebuild().iter() {
-        rep_wrapper(definition, env.clone(), choices.clone(),false);
+        rep_wrapper(definition, env.clone(), choices_manager.clone(),false);
     }
     // Operate on given arguments
     match &args.path {
-        Some(t) => { load(t, env, choices.clone()) }
+        Some(t) => { load(t, env, choices_manager.clone()) }
         _ => {
             // run normal repl loop
-            normal_loop(env.clone(), choices.clone());
+            normal_loop(env.clone(), choices_manager.clone());
         }
     }
 }
 
-fn normal_loop(env: RlEnv, choices: RlChoices) {
+fn normal_loop(env: RlEnv, choices: RlChoicesManager) {
     loop {
         // use extern crate rustyline, to get userinput
         let mut reader = rustyline::Editor::<()>::new();
@@ -131,8 +131,8 @@ Arguments:  expression - the AST(type RLType) that should be evaluated
             success/fail - root-continuations that need to be passed when non_det is true
 Returns:    of type RlReturn, so either the result or an (Evaluation)Error
  */
-fn EVAL(expression: RlType, env: RlEnv, choices: RlChoices) -> RlReturn {
-    return eval(expression, env, choices);
+fn EVAL(expression: RlType, env: RlEnv, choices_manager: RlChoicesManager) -> RlReturn {
+    return eval(expression, env, choices_manager);
 }
 
 /**
@@ -152,8 +152,8 @@ Arguments:   to_process - an input string that should be interpreted
              env - the environment the expression/input string is evaluated in
 Returns:     Error? -> object with type RLError is returned, otherwise the result sting
  */
-fn rep(to_process: &String, env: RlEnv, choices: RlChoices) -> Result<String, RlErr> {
-    return Ok(PRINT(EVAL(READ(to_process)?, env, choices)?));
+fn rep(to_process: &String, env: RlEnv, choices_manager: RlChoicesManager) -> Result<String, RlErr> {
+    return Ok(PRINT(EVAL(READ(to_process)?, env, choices_manager)?));
 }
 
 /**
@@ -167,11 +167,11 @@ Arguments:  to_rep - the string to process
 
 Returns:    -
  */
-fn rep_wrapper(to_rep: &String, env: RlEnv, choices: RlChoices ,print_flag: bool) {
+fn rep_wrapper(to_rep: &String, env: RlEnv, choices_manager: RlChoicesManager ,print_flag: bool) {
     // if there was an input
     if to_rep.len() > 0 {
         // if want to wrap non-det program, call amb_rep
-        match rep(&to_rep, env) {
+        match rep(&to_rep, env, choices_manager) {
             Ok(res) => {
                 if print_flag {
                     println!("{}", res)
@@ -195,9 +195,9 @@ file are executed even if there are multiple independent ones on multiple lines
 Arguments:  filename - name of file to read from
             env - the environment, the loaded expressions should be evaluated in
  */
-fn load(filename: &String, env: RlEnv, choices: RlChoices) {
+fn load(filename: &String, env: RlEnv, choices_manager: RlChoicesManager) {
     // load file string and pack into do expression
     let file_string = read_file_string(filename.to_string());
     // process read expression which is before packed into a (do ) expression
-    rep_wrapper(&format!("(do {})", file_string), env, choices.clone(),true);
+    rep_wrapper(&format!("(do {})", file_string), env, choices_manager.clone(),true);
 }

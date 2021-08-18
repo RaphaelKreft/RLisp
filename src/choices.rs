@@ -36,7 +36,7 @@ impl ChoicesManager {
     }
     /**
     This Method updates the choice points. It is to be called before every eval
-    returns true when there are choices left and returns false when all choices have been depleted
+    returns true when there are choices left and you can try again and returns false if you cannot try again
     */
     pub fn update_choice_points(&mut self) -> bool {
         // total_depth is only 0 if there are no choice points
@@ -55,8 +55,9 @@ impl ChoicesManager {
                 }
             }
             self.update_depth_fields();
+            return true;
         }
-        return true;
+        return false;
     }
 
     /**

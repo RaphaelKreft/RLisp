@@ -294,7 +294,7 @@ fn modulo() -> RlType {
             Err(error("% takes exxactly 2 args"))
         } else {
             // if 2 arguments given, compute modulus
-            Ok(RlType::Int(a[0].clone() % a[1].clone()))
+            Ok(RlType::Int(x[0].clone() % x[1].clone()))
         }
     })
 }

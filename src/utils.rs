@@ -27,7 +27,7 @@ Returns:    file-content as String
  */
 pub fn read_file_string(filename: String) -> String {
     match fs::read_to_string(filename) {
-        Some(content) => {return content;},
+        Ok(content) => {return content;},
         Err(_) => {
             println!("Could not read file {}, probably it wasn't found!", filename);
             std::process::exit(0x001);

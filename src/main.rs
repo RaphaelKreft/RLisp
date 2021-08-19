@@ -57,7 +57,7 @@ fn self_defined_prebuild() -> Vec<String> {
 #[derive(StructOpt)]
 struct Cli {
     /// Flag to tell if non-deterministic evaluator should be used
-    #[structopt(short = "d", long = "debug", default_value = False, about = "flag that enables debug prints")]
+    #[structopt(short = "d", long = "debug", about = "flag that enables debug prints")]
     debug: bool,
     /// The path to the file to read (optional)
     #[structopt(parse(from_os_str), about = "if this argument is given, the interpreter tries to load from the given path")]

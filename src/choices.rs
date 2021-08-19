@@ -10,6 +10,7 @@ use std::rc::Rc;
 // load functionality from sibling modules
 use crate::stdlib::core;
 use crate::types::{error, RlErr, RlReturn, RlType, choice_error};
+use crate::env::RlEnv;
 
 /// The RlChoices type wraps the Choices in a reference Cell for easy access on heap
 pub type RlChoices = Rc<Choices>;
@@ -19,7 +20,9 @@ pub type RlChoicesManager = Rc<ChoicesManager>;
 pub struct ChoicesManager {
     total_depth: usize,
     current_depth: usize,
-    choice_points: Vec<RlChoices>
+    choice_points: Vec<RlChoices>,
+    expression: RlType,
+    environment: RlEnv,
 }
 
 impl ChoicesManager {
@@ -27,11 +30,13 @@ impl ChoicesManager {
     /**
     Static Method to create a new RlChoicesManager Instance
      */
-    pub fn new_choices_manager() -> RlChoicesManager {
+    pub fn new_choices_manager(expression:RlType, environment: RlEnv) -> RlChoicesManager {
         return Rc::new(ChoicesManager {
             total_depth: 0,
             current_depth: 0,
-            choice_points: Vec::new()
+            choice_points: Vec::new(),
+            expression,
+            environment,
         });
     }
     /**

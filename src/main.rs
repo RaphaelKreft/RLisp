@@ -26,6 +26,7 @@ use std::error::Error;
 use structopt::StructOpt;
 use crate::types::error;
 use crate::choices::{Choices, RlChoices, ChoicesManager, RlChoicesManager};
+use crate::eval::amb_eval;
 
 #[macro_use]
 extern crate lazy_static;
@@ -71,11 +72,11 @@ fn main() {
     let args = Cli::from_args();
     // create a new global environment (stdlib already loaded)
     let env = env::init_global();
-    // create new global choices structure (used for non-det pattern)
-    let choices_manager = ChoicesManager::new_choices_manager();
+    // create new global choices structure (used for non-det pattern) - with placeholder expression
+    let choices_manager = ChoicesManager::new_choices_manager(RlType::Nil, env.clone());
     // execute/evaluate self defined RLisp expressions
     for definition in self_defined_prebuild().iter() {
-        rep_wrapper(definition, env.clone(), choices_manager.clone(),false);
+        rep_wrapper(definition, env.clone(), choices_manager.clone(),false, true);
     }
     // Operate on given arguments
     match &args.path {
@@ -99,9 +100,13 @@ fn normal_loop(env: RlEnv, choices: RlChoicesManager) {
                 // if command == exit, break out of the REPL
                 if line == "exit" {
                     break;
+                } else if line == "try-again" {
+                    // if try-again is executed, try to reevaluate with next choice
+                    rep_wrapper(&line, env.clone(), choices.clone(), true, false);
+                } else {
+                    // if command != exit, call the rep-wrapper with the global environment
+                    rep_wrapper(&line, env.clone(), choices.clone(),true, true);
                 }
-                // if command != exit, call the rep-wrapper with the global environment
-                rep_wrapper(&line, env.clone(), choices.clone(),true);
             }
             // There was no valid input -> Give information and repeat the loop
             Err(_) => println!("No input"),
@@ -130,8 +135,8 @@ Arguments:  expression - the AST(type RLType) that should be evaluated
             success/fail - root-continuations that need to be passed when non_det is true
 Returns:    of type RlReturn, so either the result or an (Evaluation)Error
  */
-fn EVAL(expression: RlType, env: RlEnv, choices_manager: RlChoicesManager) -> RlReturn {
-    return eval(expression, env, choices_manager);
+fn EVAL(expression: RlType, env: RlEnv, choices_manager: RlChoicesManager, new_problem: bool) -> RlReturn {
+    return amb_eval(expression, env, choices_manager, new_problem);
 }
 
 /**
@@ -151,8 +156,8 @@ Arguments:   to_process - an input string that should be interpreted
              env - the environment the expression/input string is evaluated in
 Returns:     Error? -> object with type RLError is returned, otherwise the result sting
  */
-fn rep(to_process: &String, env: RlEnv, choices_manager: RlChoicesManager) -> Result<String, RlErr> {
-    return Ok(PRINT(EVAL(READ(to_process)?, env, choices_manager)?));
+fn rep(to_process: &String, env: RlEnv, choices_manager: RlChoicesManager, new_problem: bool) -> Result<String, RlErr> {
+    return Ok(PRINT(EVAL(READ(to_process)?, env, choices_manager, new_problem)?));
 }
 
 /**
@@ -166,11 +171,11 @@ Arguments:  to_rep - the string to process
 
 Returns:    -
  */
-fn rep_wrapper(to_rep: &String, env: RlEnv, choices_manager: RlChoicesManager ,print_flag: bool) {
+fn rep_wrapper(to_rep: &String, env: RlEnv, choices_manager: RlChoicesManager ,print_flag: bool, new_problem: bool) {
     // if there was an input
     if to_rep.len() > 0 {
         // if want to wrap non-det program, call amb_rep
-        match rep(&to_rep, env, choices_manager) {
+        match rep(&to_rep, env, choices_manager, new_problem) {
             Ok(res) => {
                 if print_flag {
                     println!("{}", res)
@@ -198,5 +203,5 @@ fn load(filename: &String, env: RlEnv, choices_manager: RlChoicesManager) {
     // load file string and pack into do expression
     let file_string = read_file_string(filename.to_string());
     // process read expression which is before packed into a (do ) expression
-    rep_wrapper(&format!("(do {})", file_string), env, choices_manager.clone(),true);
+    rep_wrapper(&format!("(do {})", file_string), env, choices_manager.clone(),true, true);
 }

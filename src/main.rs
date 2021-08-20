@@ -80,7 +80,8 @@ fn main() {
     }
     // Operate on given arguments
     match &args.path {
-        Some(t) => { load(t, env, choices_manager.clone()) }
+        //TODO find a cleaner way to convert path_buf to String
+        Some(t) => { load(&t.as_path().display().to_string(), env, choices_manager.clone()) }
         _ => {
             // run normal repl loop
             normal_loop(env.clone(), choices_manager.clone());

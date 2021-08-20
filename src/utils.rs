@@ -26,7 +26,7 @@ Arguments:  filename - the name of the file to read as String
 Returns:    file-content as String
  */
 pub fn read_file_string(filename: String) -> String {
-    match fs::read_to_string(filename) {
+    match fs::read_to_string(filename.clone()) {
         Ok(content) => {return content;},
         Err(_) => {
             println!("Could not read file {}, probably it wasn't found!", filename);

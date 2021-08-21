@@ -47,7 +47,6 @@ fn self_defined_prebuild() -> Vec<String> {
         "(define caadar (lambda (x) (caar (cdr (car x)))))".to_string(),
         // convenience defs for non-det evaluation (for the use of it)
         "(define require (lambda (conditional) (cond (conditional #t) (#t (amb)))))".to_string(),
-        "(define try-again (lambda () (amb)))".to_string(),
     ]
 }
 
@@ -86,7 +85,7 @@ fn main() {
     }
 }
 
-fn normal_loop(env: RlEnv, choices: RlChoicesManager) {
+fn normal_loop(env: RlEnv, manager: RlChoicesManager) {
     loop {
         // use extern crate rustyline, to get userinput
         let mut reader = rustyline::Editor::<()>::new();
@@ -100,10 +99,10 @@ fn normal_loop(env: RlEnv, choices: RlChoicesManager) {
                     break;
                 } else if line == "try-again" {
                     // if try-again is executed, try to reevaluate with next choice
-                    rep_wrapper(&line, env.clone(), choices.clone(), true, false);
+                    rep_wrapper(&line, env.clone(), manager.clone(), true, false);
                 } else {
                     // if command != exit, call the rep-wrapper with the global environment
-                    rep_wrapper(&line, env.clone(), choices.clone(),true, true);
+                    rep_wrapper(&line, env.clone(), manager.clone(), true, true);
                 }
             }
             // There was no valid input -> Give information and repeat the loop

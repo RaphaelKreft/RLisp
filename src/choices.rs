@@ -21,8 +21,8 @@ pub struct ChoicesManager {
     total_depth: RefCell<NumberBox>,
     current_depth: RefCell<NumberBox>,
     choice_points: RefCell<Vec<Choices>>,
-    pub(crate) expression: RlType,
-    pub(crate) environment: RlEnv,
+    expression: RlType,
+    environment: RlEnv,
 }
 /**
 Static Method to create a new RlChoicesManager Instance
@@ -35,6 +35,11 @@ pub fn new_choices_manager(expression: RlType, environment: RlEnv) -> RlChoicesM
         total_depth: RefCell::new(NumberBox::new(0)),
         current_depth: RefCell::new(NumberBox::new(0)),
     });
+}
+
+// TODO: Need reset fucntion to change one Rc Container or should we make expression a RefCell?
+pub fn reset_choices_manager(manager: &RlChoicesManager) {
+    // given choices manager should be reset to normal status
 }
 
 /**
@@ -67,9 +72,12 @@ pub fn update_choice_points(manager: &RlChoicesManager) -> bool {
 This method creates a new choice point and returns the first choice of the new choice point
  */
 fn append_choice_point(manager: &RlChoicesManager, choices: Vec<RlType>) -> RlReturn {
+    // borrow current choice points as mutable and add new point to it
     let mut mut_ref = manager.choice_points.borrow_mut();
     mut_ref.push(Choices::new_choices(choices));
+    // increase total depth counter
     manager.total_depth.borrow_mut().inc();
+    // return the new added choice point
     mut_ref.last_mut().unwrap().current_choice()
 }
 

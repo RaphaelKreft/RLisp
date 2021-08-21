@@ -16,6 +16,7 @@ use std::rc::Rc;
 use crate::choices::{RlChoicesManager, get_expression, get_environment, get_choice, update_choice_points, new_choices_manager};
 use crate::types::choice_error;
 use std::ops::Deref;
+use crate::printer;
 
 /**
 This Method is a wrapper for eval. It looks if there is an amb in the evaluation to evaluate.
@@ -25,10 +26,12 @@ To do this it stores the whole expression and environment to be able to reset.
  */
 pub fn amb_eval(expression: RlType, environment: RlEnv, mut choices_manager: RlChoicesManager, new_problem: bool) -> RlReturn {
     if new_problem {
-        let whole_expression = expression.clone();
+        println!("Starting new Problem!");
         // create deep copy of current environment to be able to reset
-        let env_snapshot = Rc::from(environment.deref().clone());
-        choices_manager = new_choices_manager(whole_expression, env_snapshot);
+        let env_snapshot = Rc::new((*environment).clone());
+        choices_manager = new_choices_manager(expression.clone(), env_snapshot);
+    } else {
+        println!("Current Manager got this expression: {}", printer::print_str(get_expression(&choices_manager)));
     }
     // evaluate for first time
     loop {

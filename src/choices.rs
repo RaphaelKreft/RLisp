@@ -5,114 +5,125 @@ choices.rs: This module contains a Data-structure that is essential for the non-
  */
 
 // Import needed functionality from Rust stdlib
-use std::cell::RefCell;
 use std::rc::Rc;
+use std::cell::RefCell;
+
 // load functionality from sibling modules
-use crate::stdlib::core;
-use crate::types::{error, RlErr, RlReturn, RlType, choice_error};
+use crate::types::{RlReturn, RlType, choice_error};
 use crate::env::RlEnv;
 
 /// The RlChoices type wraps the Choices in a reference Cell for easy access on heap
-pub type RlChoices = Rc<Choices>;
+//pub type RlChoices = Rc<Choices>;
 pub type RlChoicesManager = Rc<ChoicesManager>;
 
 #[derive(Clone, Debug)]
 pub struct ChoicesManager {
-    total_depth: usize,
-    current_depth: usize,
-    choice_points: Vec<RlChoices>,
-    expression: RlType,
-    environment: RlEnv,
+    total_depth: RefCell<NumberBox>,
+    current_depth: RefCell<NumberBox>,
+    choice_points: RefCell<Vec<Choices>>,
+    pub(crate) expression: RlType,
+    pub(crate) environment: RlEnv,
+}
+/**
+Static Method to create a new RlChoicesManager Instance
+ */
+pub fn new_choices_manager(expression: RlType, environment: RlEnv) -> RlChoicesManager {
+    return Rc::new(ChoicesManager {
+        choice_points: RefCell::new(Vec::new()),
+        expression, // TODO: Make Both Refcells too?
+        environment,
+        total_depth: RefCell::new(NumberBox::new(0)),
+        current_depth: RefCell::new(NumberBox::new(0)),
+    });
 }
 
-impl ChoicesManager {
-
-    /**
-    Static Method to create a new RlChoicesManager Instance
-     */
-    pub fn new_choices_manager(expression:RlType, environment: RlEnv) -> RlChoicesManager {
-        return Rc::new(ChoicesManager {
-            total_depth: 0,
-            current_depth: 0,
-            choice_points: Vec::new(),
-            expression,
-            environment,
-        });
-    }
-    /**
-    This Method updates the choice points. It is to be called before every eval
-    returns true when there are choices left and you can try again and returns false if you cannot try again
-    */
-    pub fn update_choice_points(&mut self) -> bool {
-        // total_depth is only 0 if there are no choice points
-        if self.total_depth != 0 {
-            if self.choice_points[self.current_depth].out_of_bounds() {
-                //if the choices in the first choice point are depleted there are no more choices left to try
-                if self.current_depth == 0 {
-                    self.choice_points.clear();
-                    self.update_depth_fields();
-                    return false;
-                }
-                let mut i = 0;
-                while i < (self.choice_points.len() - self.current_depth) {
-                    self.choice_points.pop();
-                    i += 1;
-                }
+/**
+This Method updates the choice points. It is to be called before every eval
+returns true when there are choices left and you can try again and returns false if you cannot try again
+ */
+pub fn update_choice_points(manager: &RlChoicesManager) -> bool {
+    // total_depth is only 0 if there are no choice points
+    if manager.total_depth.borrow_mut().get() != 0 {
+        if manager.choice_points.borrow()[(manager.current_depth.borrow_mut().get() - 1) % manager.total_depth.borrow_mut().get()].out_of_bounds() {
+            //if the choices in the first choice point are depleted there are no more choices left to try
+            if manager.current_depth.borrow_mut().get() == 0 {
+                manager.choice_points.borrow_mut().clear();
+                update_depth_fields(manager);
+                return false;
             }
-            self.update_depth_fields();
-            return true;
+            let mut i = 0;
+            while i < (manager.choice_points.borrow().len() - manager.current_depth.borrow_mut().get()) {
+                manager.choice_points.borrow_mut().pop();
+                i += 1;
+            }
         }
-        return false;
+        update_depth_fields(manager);
+        return true;
     }
+    return false;
+}
 
-    /**
-    This method creates a new choice point and returns the first choice of the new choice point
-     */
-    fn append_choice_point(&mut self, choices: Vec<RlType>) -> RlReturn {
-        self.choice_points.push(Choices::new_choices(choices));
-        self.total_depth += 1;
-        self.choice_points[self.choice_points.len() - 1].current_choice()
-    }
+/**
+This method creates a new choice point and returns the first choice of the new choice point
+ */
+fn append_choice_point(manager: &RlChoicesManager, choices: Vec<RlType>) -> RlReturn {
+    let mut mut_ref = manager.choice_points.borrow_mut();
+    mut_ref.push(Choices::new_choices(choices));
+    manager.total_depth.borrow_mut().inc();
+    mut_ref.last_mut().unwrap().current_choice()
+}
 
-    /**
-    This method resets the current depth counter. To be called every time the expression gets
-    evaluated again
-     */
-    fn update_depth_fields(&mut self) {
-        self.total_depth = self.choice_points.len();
-        self.current_depth = 0;
-    }
+/**
+This method resets the current depth counter. To be called every time the expression gets
+evaluated again
+ */
+fn update_depth_fields(manager: &RlChoicesManager) {
+    manager.total_depth.borrow_mut().set(manager.choice_points.borrow().len());
+    manager.current_depth.borrow_mut().set(0);
+}
 
-    /**
-    This method checks whether we reached the last choice point. Used to see if a new choice point
-    needs to be created
-     */
-    fn new_choice_point(&self) -> bool {
-        return self.current_depth == self.total_depth
-    }
+/**
+This method checks whether we reached the last choice point. Used to see if a new choice point
+needs to be created
+ */
+fn new_choice_point(manager: &RlChoicesManager) -> bool {
+    return manager.current_depth.borrow_mut().get() == manager.total_depth.borrow_mut().get()
+}
 
-    fn last_choice_point(&self) -> bool {
-        return self.current_depth + 1 == self.total_depth
-    }
+fn last_choice_point(manager: &RlChoicesManager) -> bool {
+    return manager.current_depth.borrow_mut().get() + 1 == manager.total_depth.borrow_mut().get()
+}
 
 
-    /**
-    This method returns the the next choice of the current choice point
-     */
-    pub fn get_choice(&mut self, choices: Vec<RlType>) -> RlReturn {
-        if self.new_choice_point() {
-            self.current_depth += 1;
-            self.append_choice_point(choices)
+/**
+This method returns the the next choice of the current choice point
+ */
+pub fn get_choice(manager: &RlChoicesManager, choices: Vec<RlType>) -> RlReturn {
+    if new_choice_point(manager) {
+        manager.current_depth.borrow_mut().inc();
+        append_choice_point(manager, choices)
+    } else {
+        manager.current_depth.borrow_mut().inc();
+        if !last_choice_point(manager) {
+            manager.choice_points.borrow_mut()[manager.current_depth.borrow_mut().get() - 1].current_choice()
         } else {
-            self.current_depth += 1;
-            if !self.last_choice_point() {
-                self.choice_points[self.current_depth - 1].current_choice()
-            } else {
-                self.choice_points[self.current_depth].next_choice()
-            }
+            manager.choice_points.borrow_mut()[manager.current_depth.borrow_mut().get()].next_choice()
         }
     }
 }
+
+pub fn get_expression(manager: &RlChoicesManager) -> RlType {
+    return manager.expression.clone();
+}
+
+pub fn get_environment(manager: &RlChoicesManager) -> RlEnv {
+    return manager.environment.clone();
+}
+
+pub fn get_choices_length(manager: &RlChoicesManager) -> usize {
+    return manager.choice_points.borrow().len();
+}
+
 
 #[derive(Clone, Debug)]
 pub struct Choices {
@@ -125,11 +136,11 @@ impl Choices {
     /**
     Static Method to create a new RlChoices Instance
      */
-    pub fn new_choices(new_choices: Vec<RlType>) -> RlChoices {
-        return Rc::new(Choices{
+    pub fn new_choices(new_choices: Vec<RlType>) -> Choices {
+        return Choices{
             choices: new_choices,
             index: 0,
-        });
+        };
     }
 
     /**
@@ -169,6 +180,31 @@ impl Choices {
     */
     pub fn reset(&mut self) {
         self.index = 0;
+    }
+}
+
+#[derive(Clone, Debug)]
+struct NumberBox {
+    number: usize,
+}
+
+impl NumberBox {
+    pub fn new(num: usize) -> NumberBox {
+        return NumberBox {
+            number: num
+        }
+    }
+
+    pub fn get(&self) -> usize {
+        return self.number;
+    }
+
+    pub fn inc(&mut self) {
+        self.number += 1;
+    }
+
+    pub fn set(&mut self, value: usize) {
+        self.number = value;
     }
 }
 

@@ -13,30 +13,30 @@ use crate::env::new_env_bound;
 
 // load needed Rust modules
 use std::rc::Rc;
-use crate::choices::{RlChoices, Choices, RlChoicesManager, ChoicesManager};
+use crate::choices::{RlChoicesManager, get_expression, get_environment, get_choice, update_choice_points, new_choices_manager};
 use crate::types::choice_error;
+use std::ops::Deref;
 
 /**
 This Method is a wrapper for eval. It looks if there is an amb in the evaluation to evaluate.
 If yes, then a new amb-problem is started. It also looks for coming fail (from require etc),
 and triggers reevaluation of the whole expression with the next choice.
 To do this it stores the whole expression and environment to be able to reset.
-
-TODO: How to treat try-again calls (code need to be stored on higher level if it should be able to call try again in separate expression)
  */
 pub fn amb_eval(expression: RlType, environment: RlEnv, mut choices_manager: RlChoicesManager, new_problem: bool) -> RlReturn {
     if new_problem {
-        let whole_expression = expression.copy();
-        let env_snapshot = environment.copy();
-        choices_manager = ChoicesManager::new_choices_manager(whole_expression, env_snapshot);
+        let whole_expression = expression.clone();
+        // create deep copy of current environment to be able to reset
+        let env_snapshot = Rc::from(environment.deref().clone());
+        choices_manager = new_choices_manager(whole_expression, env_snapshot);
     }
     // evaluate for first time
     loop {
-        match eval(choices_manager::expression, choices_manager::environment, choices_manager.clone()) {
+        match eval(get_expression(&choices_manager), get_environment(&choices_manager), choices_manager.clone()) {
             // if computation successful just return value -> If no amb or amb and no new choice needed
             Ok(value) => {
                 // update choices for possible try-next(if choices exist)
-                choices_manager.update_choice_points();
+                update_choice_points(&mut choices_manager);
                 // return value
                 return Ok(value);
             }
@@ -45,7 +45,7 @@ pub fn amb_eval(expression: RlType, environment: RlEnv, mut choices_manager: RlC
                 match err {
                     // if it was a choices error, try to select new path (comb of choices) and reevaluate
                     RlErr::ChoicesErr(_str) => {
-                        if choices_manager.update_choice_points() {
+                        if update_choice_points(&mut choices_manager) {
                             continue;
                         } else {
                             // if no choices left break and thus return ChoicesError
@@ -79,7 +79,7 @@ Arguments:  expression - Abstract Syntax Tree(AST) that represents the expressio
             environment - the environment the expression is evaluated in
 Returns:    of type RlReturn - in case of an Error, is RLError otherwise the resulting AST (result of the whole evaluation)
  */
-pub fn eval(expression: RlType, environment: RlEnv, mut choices_manager: RlChoicesManager) -> RlReturn {
+pub fn eval(expression: RlType, environment: RlEnv, choices_manager: RlChoicesManager) -> RlReturn {
     match expression.clone() {
         // If given expression is a List
         RlType::List(content) => {
@@ -231,7 +231,7 @@ pub fn eval(expression: RlType, environment: RlEnv, mut choices_manager: RlChoic
                             Err(choice_error("(amb) called! -> fail signal"))
 
                         } else {
-                            choices_manager.get_choice(content[1..].to_vec())
+                            get_choice(&choices_manager, content[1..].to_vec())
                         }
                     }
                     _ => {
@@ -240,7 +240,7 @@ pub fn eval(expression: RlType, environment: RlEnv, mut choices_manager: RlChoic
                         for element in content.iter() {
                             evaluated.push(eval(element.clone(), environment.clone(), choices_manager.clone())?);
                         }
-                        apply(evaluated)
+                        apply(evaluated, choices_manager.clone())
                     }
                 }
             };
@@ -260,7 +260,7 @@ Here we can ignore case of empty list because that case is caught in eval.
 Arguments:  args - the list of expressions
 Returns:    The value evaluated by the function application or an Error.
  */
-pub fn apply(args: Vec<RlType>) -> RlReturn {
+pub fn apply(args: Vec<RlType>, choices_manager: RlChoicesManager) -> RlReturn {
     let func = args[0].clone();
     // check if first argument is a function
     match func {

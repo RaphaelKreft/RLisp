@@ -17,15 +17,12 @@ pub mod choices;
 
 // load important functionality from submodules
 use crate::env::RlEnv;
-use eval::eval;
 use types::{RlErr, RlReturn, RlType};
 use utils::{read_file_string};
 
 // standard library imports
-use std::error::Error;
 use structopt::StructOpt;
-use crate::types::error;
-use crate::choices::{Choices, RlChoices, ChoicesManager, RlChoicesManager};
+use crate::choices::{RlChoicesManager, new_choices_manager};
 use crate::eval::amb_eval;
 
 #[macro_use]
@@ -73,7 +70,7 @@ fn main() {
     // create a new global environment (stdlib already loaded)
     let env = env::init_global();
     // create new global choices structure (used for non-det pattern) - with placeholder expression
-    let choices_manager = ChoicesManager::new_choices_manager(RlType::Nil, env.clone());
+    let choices_manager = new_choices_manager(RlType::Nil, env.clone());
     // execute/evaluate self defined RLisp expressions
     for definition in self_defined_prebuild().iter() {
         rep_wrapper(definition, env.clone(), choices_manager.clone(),false, true);

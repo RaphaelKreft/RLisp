@@ -13,10 +13,12 @@ use crate::env::new_env_bound;
 
 // load needed Rust modules
 use std::rc::Rc;
-use crate::choices::{RlChoicesManager, get_expression, get_environment, get_choice, update_choice_points, new_choices_manager};
+use crate::choices::{RlChoicesManager, get_expression, get_environment, get_choice, update_choice_points, new_choices_manager, reset_choices_manager, set_environment, set_expression};
 use crate::types::choice_error;
 use std::ops::Deref;
 use crate::printer;
+use std::borrow::BorrowMut;
+use crate::types::RlErr::ChoicesErr;
 
 /**
 This Method is a wrapper for eval. It looks if there is an amb in the evaluation to evaluate.
@@ -29,7 +31,9 @@ pub fn amb_eval(expression: RlType, environment: RlEnv, mut choices_manager: RlC
         println!("Starting new Problem!");
         // create deep copy of current environment to be able to reset
         let env_snapshot = Rc::new((*environment).clone());
-        choices_manager = new_choices_manager(expression.clone(), env_snapshot);
+        let exp_snapshot = expression.clone();
+        set_environment(&mut choices_manager,  env_snapshot);
+        set_expression(&mut choices_manager, exp_snapshot);
     } else {
         println!("Current Manager got this expression: {}", printer::print_str(get_expression(&choices_manager)));
     }
@@ -49,9 +53,12 @@ pub fn amb_eval(expression: RlType, environment: RlEnv, mut choices_manager: RlC
                     // if it was a choices error, try to select new path (comb of choices) and reevaluate
                     RlErr::ChoicesErr(_str) => {
                         if update_choice_points(&mut choices_manager) {
+                            println!("new path available");
                             continue;
                         } else {
                             // if no choices left break and thus return ChoicesError
+                            println!("no path available");
+                            set_expression(&mut choices_manager, RlType::Nil);
                             break;
                         }
                     }

@@ -13,12 +13,13 @@ use crate::env::new_env_bound;
 
 // load needed Rust modules
 use std::rc::Rc;
-use crate::choices::{RlChoicesManager, get_expression, get_environment, get_choice, update_choice_points, new_choices_manager, reset_choices_manager, set_environment, set_expression};
+use crate::choices::{RlChoicesManager, get_expression, get_choice, update_choice_points, new_choices_manager, reset_choices_manager, set_expression};
 use crate::types::choice_error;
 use std::ops::Deref;
 use crate::printer;
 use std::borrow::BorrowMut;
 use crate::types::RlErr::ChoicesErr;
+
 
 /**
 This Method is a wrapper for eval. It looks if there is an amb in the evaluation to evaluate.
@@ -30,16 +31,18 @@ pub fn amb_eval(expression: RlType, environment: RlEnv, mut choices_manager: RlC
     if new_problem {
         println!("Starting new Problem!");
         // create deep copy of current environment to be able to reset
-        let env_snapshot = Rc::new((*environment).clone());
+        //let env_snapshot = Rc::new((*environment).clone());
         let exp_snapshot = expression.clone();
-        set_environment(&mut choices_manager,  env_snapshot);
+        //set_environment(&mut choices_manager,  env_snapshot);
         set_expression(&mut choices_manager, exp_snapshot);
+        reset_choices_manager(&mut choices_manager);
+        update_choice_points(&mut choices_manager);
     } else {
         println!("Current Manager got this expression: {}", printer::print_str(get_expression(&choices_manager)));
     }
     // evaluate for first time
     loop {
-        match eval(get_expression(&choices_manager), get_environment(&choices_manager), choices_manager.clone()) {
+        match eval(get_expression(&choices_manager), environment.clone(), choices_manager.clone()) {
             // if computation successful just return value -> If no amb or amb and no new choice needed
             Ok(value) => {
                 // update choices for possible try-next(if choices exist)
@@ -241,7 +244,7 @@ pub fn eval(expression: RlType, environment: RlEnv, choices_manager: RlChoicesMa
                             Err(choice_error("(amb) called! -> fail signal"))
 
                         } else {
-                            get_choice(&choices_manager, content[1..].to_vec())
+                            eval(get_choice(&choices_manager, content[1..].to_vec())?, environment.clone(), choices_manager.clone())
                         }
                     }
                     _ => {

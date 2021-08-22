@@ -1,11 +1,11 @@
-(define prime-sum-pair (lambda (list1 list2)
-        (let ((a (eval(list amb list1)))
-               (b (eval(list amb list2))))
+(define prime-sum-pair (lambda (c d e f)
+        (let ((a (amb c d))
+              (b (amb e f)))
             (cond ((prime? (+ a b)) (list a b))
                   (#t (amb))))))
+(define square (lambda (n) (* n n)))
 
-
-(define prime?(lambda (n)
+(define prime? (lambda (n)
     (eq? n (smallest-divisor n))))
 
 (define smallest-divisor (lambda (n) (find-divisor n 2)))
@@ -19,8 +19,10 @@
 
 (define an-element-of (lambda (items)
     (cond ((nil? items) (amb))
-          (#t (amb (car items) (an-elements-of (cdr items)))))))
+          (#t (amb (car items) (an-element-of (cdr items)))))))
 
+(define even? (lambda (n)
+    (cond ((eq? (% n 2) 0) #t)
+          (#t #f))))
 
-(println [-->sum-prime-pair (prime-sum-pair (list 1 3 5 8) (list 20 35 110))<--])
-(prime-sum-pair (list 1 3 5 8) (list 20 35 110))
+(println [-->prime-sum-pair (prime-sum-pair (list 1 3 5 8) (list 20 35 110))<--])

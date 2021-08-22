@@ -69,7 +69,7 @@ fn main() {
     // create a new global environment (stdlib already loaded)
     let env = env::init_global();
     // create new global choices structure (used for non-det pattern) - with placeholder expression
-    let choices_manager = new_choices_manager(RlType::Nil, env.clone());
+    let choices_manager = new_choices_manager(RlType::Nil);
     // execute/evaluate self defined RLisp expressions
     for definition in self_defined_prebuild().iter() {
         rep_wrapper(definition, env.clone(), choices_manager.clone(),false, true);

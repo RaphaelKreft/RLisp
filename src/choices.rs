@@ -23,24 +23,24 @@ pub struct ChoicesManager {
     current_depth: RefCell<NumberBox>,
     choice_points: RefCell<Vec<Choices>>,
     expression: RefCell<ExpressionWrapper>,
-    environment: RefCell<EnvironmentWrapper>,
 }
 /**
 Static Method to create a new RlChoicesManager Instance
  */
-pub fn new_choices_manager(expression: RlType, environment: RlEnv) -> RlChoicesManager {
+pub fn new_choices_manager(expression: RlType) -> RlChoicesManager {
     return Rc::new(ChoicesManager {
         choice_points: RefCell::new(Vec::new()),
         expression: RefCell::new(ExpressionWrapper::new(expression)), // TODO: Make Both Refcells too?
-        environment: RefCell::new(EnvironmentWrapper::new(environment)),
         total_depth: RefCell::new(NumberBox::new(0)),
         current_depth: RefCell::new(NumberBox::new(0)),
     });
 }
 
 // TODO: Need reset fucntion to change one Rc Container or should we make expression a RefCell?
-pub fn reset_choices_manager(manager: &RlChoicesManager, expression: RlType, env: RlEnv) {
-
+pub fn reset_choices_manager(manager: &RlChoicesManager) {
+    manager.choice_points.borrow_mut().clear();
+    manager.total_depth.borrow_mut().set(0);
+    manager.current_depth.borrow_mut().set(0);
 }
 
 
@@ -127,13 +127,8 @@ pub fn get_expression(manager: &RlChoicesManager) -> RlType {
     return manager.expression.borrow().get();
 }
 
-pub fn get_environment(manager: &RlChoicesManager) -> RlEnv {
-    return manager.environment.borrow().get();
-}
 
-pub fn set_environment(manager: &mut RlChoicesManager, env: RlEnv) {
-    manager.environment.borrow_mut().set(env);
-}
+
 
 pub fn set_expression(manager: &mut RlChoicesManager, exp: RlType) {
     manager.expression.borrow_mut().set(exp);

@@ -51,7 +51,7 @@ returns true when there are choices left and you can try again and returns false
 pub fn update_choice_points(manager: &RlChoicesManager) -> bool {
     // total_depth is only 0 if there are no choice points
     if manager.total_depth.borrow_mut().get() != 0 {
-        if manager.choice_points.borrow()[(manager.current_depth.borrow_mut().get() + 1) % manager.total_depth.borrow_mut().get()].out_of_bounds() {
+        if manager.choice_points.borrow()[(manager.current_depth.borrow_mut().get() - 1) % manager.total_depth.borrow_mut().get()].out_of_bounds() {
             //if the choices in the first choice point are depleted there are no more choices left to try
             if manager.current_depth.borrow_mut().get() == 1 {
                 println!("cleared top choice point");

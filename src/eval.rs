@@ -36,7 +36,7 @@ pub fn amb_eval(expression: RlType, environment: RlEnv, mut choices_manager: RlC
         //set_environment(&mut choices_manager,  env_snapshot);
         set_expression(&mut choices_manager, exp_snapshot);
         reset_choices_manager(&mut choices_manager);
-        update_choice_points(&mut choices_manager);
+        //update_choice_points(&mut choices_manager);
     } else {
         println!("Current Manager got this expression: {}", printer::print_str(get_expression(&choices_manager)));
     }
@@ -56,11 +56,9 @@ pub fn amb_eval(expression: RlType, environment: RlEnv, mut choices_manager: RlC
                     // if it was a choices error, try to select new path (comb of choices) and reevaluate
                     RlErr::ChoicesErr(_str) => {
                         if update_choice_points(&mut choices_manager) {
-                            println!("new path available");
                             continue;
                         } else {
                             // if no choices left break and thus return ChoicesError
-                            println!("no path available");
                             set_expression(&mut choices_manager, RlType::Nil);
                             break;
                         }
@@ -240,11 +238,11 @@ pub fn eval(expression: RlType, environment: RlEnv, choices_manager: RlChoicesMa
                         // choices tree if not call next choice execution
                         if content.len() == 1 {
                             // send fail signal
-                            //choices_manager.get_choice(vec![]);
+                            //return get_choice(&choices_manager, vec![]);
                             Err(choice_error("(amb) called! -> fail signal"))
 
                         } else {
-                            eval(get_choice(&choices_manager, content[1..].to_vec())?, environment.clone(), choices_manager.clone())
+                            eval(get_choice(&choices_manager, content[1..].to_vec().clone())?, environment.clone(), choices_manager.clone())
                         }
                     }
                     _ => {

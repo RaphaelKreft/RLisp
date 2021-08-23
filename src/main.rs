@@ -47,6 +47,7 @@ fn self_defined_prebuild() -> Vec<String> {
         "(define caadar (lambda (x) (caar (cdr (car x)))))".to_string(),
         // convenience defs for non-det evaluation (for the use of it)
         "(define require (lambda (conditional) (cond (conditional #t) (#t (amb)))))".to_string(),
+        "(load [Examples/non_det_tests.test])".to_string(),
     ]
 }
 

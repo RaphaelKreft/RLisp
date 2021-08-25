@@ -8,8 +8,12 @@ convenient to use in real-life applications.
 
 ## Features
 
-A special feature that will be implemented in the next weeks will be the support for non-deterministic programming.
-This programming paradigm will be implemented via an "amb driver loop" and will free the programmer from the details how decisions are made. More details will follow.
+A special feature implemented for this evaluator is non-deterministic computing. This feature is made possible by a
+new special form called `amb`. When the evaluator encounters an amb expression it creates a choice point containing the 
+different options/values, with which to evaluate the expression. The choice points themselves are managed by a 
+ChoicesManager. This allows the user to prompt the evaluator to try another option by typing `try-again` after a result 
+has been returned. For a more detailed explanation of the inner workings please refer to the executive summary. Further information about the amb
+special form can be found in the Documentation section of this file.
 
 ## Usage
 
@@ -260,6 +264,38 @@ and executes the expressions in it in sequence (internally using the `do` expres
 being returned.
 
 Example: `(load [test.txt])`
+
+**14. AMB**:
+
+is a special form that allows for non-deterministic computing. It takes an zero to any number of arguments. 
+When no arguments are provided a choices_error is thrown. This error signals to the evaluator that the next value of the
+last choice point should be used. So `(amb)` can be called to try the next value when the current does does not fulfill 
+a certain condition. If arguments are provided a new choice point is created with the arguments as  options/values.
+As with the amb with no arguments there is a choices_error thrown when all options are depleted.
+
+When evaluating expressions which contain an amb special form the user has the option to type `try-again` after a result has been
+returned. This prompts the evaluator to try the next option. When there are no more options to be explored the user is presented
+with this information.
+
+Example: 
+
+    (amb 1 2)
+    1
+    try-again
+    2
+    try-again
+    Exception! No choices left!
+
+For convenience we included a procedure being loaded on startup to use the amb special form with lists.
+The procedure is called `an-element-of` and takes 1 list as an argument. It behaves analogously to the
+amb special form above.
+
+Example: 
+
+    (an-element-of (list 1 2))
+    1
+    try-again
+    2
 
 ### Language Elements defined in RLisp itself
 With this already pretty sweet selection of atoms RLisp is Turing-Complete and we have the opportunity to expand the

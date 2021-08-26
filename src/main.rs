@@ -48,6 +48,8 @@ fn self_defined_prebuild() -> Vec<String> {
         // convenience defs for non-det evaluation (for the use of it)
         "(define require (lambda (conditional) (cond (conditional #t) (#t (amb)))))".to_string(),
         "(define an-element-of (lambda (items) (cond ((nil? items) (amb))(#t (amb (car items) (an-element-of (cdr items)))))))".to_string(),
+        "(define not (lambda (x) (cond (x #f) (#t #t))))".to_string(),
+        "(define abs (lambda (x) (cond ((> x 0) x) ((eq? x 0) 0) ((< x 0) (- x)))))".to_string(),
     ]
 }
 

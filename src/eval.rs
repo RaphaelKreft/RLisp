@@ -208,7 +208,7 @@ pub fn eval(expression: RlType, environment: RlEnv, choices_manager: RlChoicesMa
                     RlType::Symbol(s) if s == "do" => {
                         // evaluate every expression except the last one
                         for expression in content[1..content.len() - 1].iter() {
-                            let _ = eval(expression.clone(), environment.clone(), choices_manager.clone());
+                            let _ = eval(expression.clone(), environment.clone(), choices_manager.clone())?;
                         }
                         // evaluate last expression and return its value
                         return eval(

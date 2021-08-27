@@ -14,7 +14,6 @@ use crate::env::RlEnv;
 use crate::printer;
 
 /// The RlChoices type wraps the Choices in a reference Cell for easy access on heap
-//pub type RlChoices = Rc<Choices>;
 pub type RlChoicesManager = Rc<ChoicesManager>;
 
 #[derive(Clone, Debug)]
@@ -30,13 +29,13 @@ Static Method to create a new RlChoicesManager Instance
 pub fn new_choices_manager(expression: RlType) -> RlChoicesManager {
     return Rc::new(ChoicesManager {
         choice_points: RefCell::new(Vec::new()),
-        expression: RefCell::new(ExpressionWrapper::new(expression)), // TODO: Make Both Refcells too?
+        expression: RefCell::new(ExpressionWrapper::new(expression)),
         total_depth: RefCell::new(NumberBox::new(0)),
         current_depth: RefCell::new(NumberBox::new(0)),
     });
 }
 
-// TODO: Need reset fucntion to change one Rc Container or should we make expression a RefCell?
+
 pub fn reset_choices_manager(manager: &RlChoicesManager) {
     manager.choice_points.borrow_mut().clear();
     manager.total_depth.borrow_mut().set(0);
@@ -51,20 +50,24 @@ returns true when there are choices left and you can try again and returns false
 pub fn update_choice_points(manager: &RlChoicesManager) -> bool {
     // total_depth is only 0 if there are no choice points
     if manager.total_depth.borrow_mut().get() != 0 {
+        // check if last failed choice point went out of bounds
         if manager.choice_points.borrow()[(manager.current_depth.borrow_mut().get() - 1) % manager.total_depth.borrow_mut().get()].out_of_bounds() {
             //if the choices in the first choice point are depleted there are no more choices left to try
             if manager.current_depth.borrow_mut().get() == 1 {
                 println!("cleared top choice point");
                 manager.choice_points.borrow_mut().clear();
                 update_depth_fields(manager);
+                // signals that all choices have been tried
                 return false;
             }
+            // remove the choice points coming after the last failed choice point
             let mut i = 0;
             while i < (manager.choice_points.borrow().len() - (manager.current_depth.borrow_mut().get() - 1)) {
                 manager.choice_points.borrow_mut().pop();
                 i += 1;
             }
         }
+        // reset depth fields
         update_depth_fields(manager);
         return true;
     }
@@ -95,12 +98,8 @@ fn update_depth_fields(manager: &RlChoicesManager) {
 
 /**
 This method checks whether we reached the last choice point. Used to see if a new choice point
-needs to be created
+needs to be created or the next choice should be tried.
  */
-fn new_choice_point(manager: &RlChoicesManager) -> bool {
-    return manager.current_depth.borrow_mut().get() == manager.total_depth.borrow_mut().get()
-}
-
 fn last_choice_point(manager: &RlChoicesManager) -> bool {
     return manager.current_depth.borrow_mut().get() == manager.total_depth.borrow_mut().get()
 }
@@ -110,32 +109,34 @@ fn last_choice_point(manager: &RlChoicesManager) -> bool {
 This method returns the the next choice of the current choice point
  */
 pub fn get_choice(manager: &RlChoicesManager, choices: Vec<RlType>) -> RlReturn {
-    if new_choice_point(manager) {
+    if last_choice_point(manager) {
         manager.current_depth.borrow_mut().inc();
         append_choice_point(manager, choices)
     } else {
         manager.current_depth.borrow_mut().inc();
         if !last_choice_point(manager) {
+            //keep current choice
             manager.choice_points.borrow_mut()[manager.current_depth.borrow_mut().get() - 1].current_choice()
         } else {
+            //try next choice
             manager.choice_points.borrow_mut()[manager.current_depth.borrow_mut().get() - 1].next_choice()
         }
     }
 }
 
+/**
+This method gets the currently saved expression in the choices manager
+*/
 pub fn get_expression(manager: &RlChoicesManager) -> RlType {
     return manager.expression.borrow().get();
 }
 
 
-
-
+/**
+This method sets the an expression in the choices manager
+*/
 pub fn set_expression(manager: &mut RlChoicesManager, exp: RlType) {
     manager.expression.borrow_mut().set(exp);
-}
-
-pub fn get_choices_length(manager: &RlChoicesManager) -> usize {
-    return manager.choice_points.borrow().len();
 }
 
 
@@ -168,6 +169,9 @@ impl Choices {
         }
     }
 
+    /**
+    This method returns the current choice for current choice point
+    */
     pub fn current_choice(&mut self) -> RlReturn {
         return match self.choices.get(self.index) {
             Some(choice) => Ok(choice.clone()),
@@ -241,26 +245,5 @@ impl ExpressionWrapper {
 
     pub fn set(&mut self, expression: RlType) {
         self.expression = expression;
-    }
-}
-
-#[derive(Clone, Debug)]
-struct EnvironmentWrapper {
-    env: RlEnv,
-}
-
-impl EnvironmentWrapper {
-    pub fn new(env: RlEnv) -> EnvironmentWrapper {
-        return EnvironmentWrapper {
-            env
-        }
-    }
-
-    pub fn get(&self) -> RlEnv {
-        return self.env.clone();
-    }
-
-    pub fn set(&mut self, env: RlEnv) {
-        self.env = env;
     }
 }

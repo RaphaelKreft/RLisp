@@ -238,10 +238,9 @@ pub fn eval(expression: RlType, environment: RlEnv, choices_manager: RlChoicesMa
                         // choices tree if not call next choice execution
                         if content.len() == 1 {
                             // send fail signal
-                            //return get_choice(&choices_manager, vec![]);
                             Err(choice_error("(amb) called! -> fail signal"))
-
                         } else {
+                            // if there are choices supplied a new choice point gets created or the correcct choice gets returned
                             eval(get_choice(&choices_manager, content[1..].to_vec().clone())?, environment.clone(), choices_manager.clone())
                         }
                     }

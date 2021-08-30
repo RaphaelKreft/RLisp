@@ -47,3 +47,36 @@
             (list (list 'baker baker) (list 'cooper cooper)
             (list 'fletcher fletcher) (list 'miller miller)
             (list 'smith smith))))))
+
+(define append (lambda (x y)
+  (cond ((nil? x) y)
+        ((list? x) (cons (car x) (append (cdr x) y)))
+        (#t (cons x y)))))
+
+(define subsetsum (lambda (target list)
+    (subsetsum-proc target list 0 #nil)))
+
+
+(define subsetsum-proc (lambda (target list sum solution)
+
+    (cond ((nil? list) (subsetsum-check target sum solution))
+           (#t (let ((include (amb #t #f)))
+                    (cond (include  (subsetsum-proc target (cdr list) (+ sum (car list)) (append solution (car list))))
+                          (#t (subsetsum-proc target (cdr list) sum solution))))))))
+
+(define subsetsum-check (lambda (target sum solution)
+    (do
+       (require (not (nil? solution)))
+       (require (eq? target sum))
+       (println [Elements in solution:])
+       solution)))
+
+(define partition (lambda (list)
+    (let ((s (sum list)))
+    (cond ((eq? (% s 2) 0) (subsetsum (/ s 2) list))
+          (#t (amb))))))
+
+
+(define sum (lambda (list)
+    (cond ((nil? list) 0)
+          (#t (+ (car list) (sum (cdr list)))))))

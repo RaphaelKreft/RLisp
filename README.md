@@ -267,7 +267,7 @@ Example: `(load [test.txt])`
 
 **14. AMB**:
 
-is a special form that allows for non-deterministic computing. It takes an zero to any number of arguments. 
+is a special form that allows for non-deterministic computing. It takes zero to any number of arguments. 
 When no arguments are provided a choices_error is thrown. This error signals to the evaluator that the next value of the
 last choice point should be used. So `(amb)` can be called to try the next value when the current does does not fulfill 
 a certain condition. If arguments are provided a new choice point is created with the arguments as  options/values.
@@ -296,6 +296,11 @@ Example:
     1
     try-again
     2
+
+You can find example programs in the non_det_examples.lisp file in the Examples directory. To load these programs you can
+use the load special form of the evaluator. Two of these examples are non-deterministic algorithms for NP-Hard problems.
+Namely the subsetsum problem and the partition problem. You can find more information about those problems online. The
+other examples are taken from the example sections of the SICP book.
 
 ### Language Elements defined in RLisp itself
 With this already pretty sweet selection of atoms RLisp is Turing-Complete and we have the opportunity to expand the

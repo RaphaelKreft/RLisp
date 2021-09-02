@@ -22,25 +22,20 @@ use crate::types::RlErr::ChoicesErr;
 
 
 /**
-This Method is a wrapper for eval. It looks if there is an amb in the evaluation to evaluate.
-If yes, then a new amb-problem is started. It also looks for coming fail (from require etc),
-and triggers reevaluation of the whole expression with the next choice.
-To do this it stores the whole expression and environment to be able to reset.
+    This Method is a wrapper for eval. It first checks if there is a new expression to be evaluated.
+    If yes, then the choices manager is updated. When evaluating the stored expression it additionally checks
+    if there was a choices_error which triggers the backtracking mechanism to try the next choice.
  */
 pub fn amb_eval(expression: RlType, environment: RlEnv, mut choices_manager: RlChoicesManager, new_problem: bool) -> RlReturn {
     if new_problem {
         println!("Starting new Problem!");
-        // create deep copy of current environment to be able to reset
-        //let env_snapshot = Rc::new((*environment).clone());
         let exp_snapshot = expression.clone();
-        //set_environment(&mut choices_manager,  env_snapshot);
         set_expression(&mut choices_manager, exp_snapshot);
         reset_choices_manager(&mut choices_manager);
-        //update_choice_points(&mut choices_manager);
     } else {
         println!("Current Manager got this expression: {}", printer::print_str(get_expression(&choices_manager)));
     }
-    // evaluate for first time
+    // evaluate expression stored in choices manager
     loop {
         match eval(get_expression(&choices_manager), environment.clone(), choices_manager.clone()) {
             // if computation successful just return value -> If no amb or amb and no new choice needed
@@ -240,7 +235,7 @@ pub fn eval(expression: RlType, environment: RlEnv, choices_manager: RlChoicesMa
                             // send fail signal
                             Err(choice_error("(amb) called! -> fail signal"))
                         } else {
-                            // if there are choices supplied a new choice point gets created or the correcct choice gets returned
+                            // get choice (managed by choices manager)
                             eval(get_choice(&choices_manager, content[1..].to_vec().clone())?, environment.clone(), choices_manager.clone())
                         }
                     }

@@ -53,6 +53,8 @@
         ((list? x) (cons (car x) (append (cdr x) y)))
         (#t (cons x y)))))
 
+(println [-->defining subsetsum: try "(subsetsum 7 (list 1 2 4 5 6))"<--])
+
 (define subsetsum (lambda (target list)
     (subsetsum-proc target list 0 #nil)))
 
@@ -70,6 +72,9 @@
        (require (eq? target sum))
        (println [Elements in solution:])
        solution)))
+
+
+(println [-->defining partition: try "(partition (list 4 6 10 1 7 5 3))"<--])
 
 (define partition (lambda (list)
     (let ((s (sum list)))
